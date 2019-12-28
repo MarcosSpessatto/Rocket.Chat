@@ -132,24 +132,24 @@ API.v1.addRoute('users.setActiveStatus', { authRequired: true }, {
 	},
 });
 
-API.v1.addRoute('users.getPresence', { authRequired: true }, {
-	get() {
-		if (this.isUserFromParams()) {
-			const user = Users.findOneById(this.userId);
-			return API.v1.success({
-				presence: user.status,
-				connectionStatus: user.statusConnection,
-				lastLogin: user.lastLogin,
-			});
-		}
+// API.v1.addRoute('users.getPresence', { authRequired: true }, {
+// 	get() {
+// 		if (this.isUserFromParams()) {
+// 			const user = Users.findOneById(this.userId);
+// 			return API.v1.success({
+// 				presence: user.status,
+// 				connectionStatus: user.statusConnection,
+// 				lastLogin: user.lastLogin,
+// 			});
+// 		}
 
-		const user = this.getUserFromParams();
+// 		const user = this.getUserFromParams();
 
-		return API.v1.success({
-			presence: user.status,
-		});
-	},
-});
+// 		return API.v1.success({
+// 			presence: user.status,
+// 		});
+// 	},
+// });
 
 API.v1.addRoute('users.info', { authRequired: true }, {
 	get() {

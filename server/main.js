@@ -82,3 +82,7 @@ import './routes/avatar';
 import './stream/messages';
 import './stream/rooms';
 import './stream/streamBroadcast';
+import { Meteor } from 'meteor/meteor';
+import { initApplication } from './configuration/init';
+
+Meteor.startup(async() => initApplication());

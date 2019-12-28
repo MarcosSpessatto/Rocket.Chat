@@ -44,7 +44,8 @@
 		"set-version": "node .scripts/set-version.js",
 		"release": "meteor npm run set-version --silent",
 		"storybook": "start-storybook -p 6006",
-		"build-storybook": "build-storybook"
+		"build-storybook": "build-storybook",
+		"check-architecture-boundaries": "gf"
 	},
 	"license": "MIT",
 	"repository": {
@@ -71,6 +72,7 @@
 		"@storybook/react": "^5.2.8",
 		"@types/bcrypt": "^3.0.0",
 		"@types/meteor": "^1.4.37",
+		"@types/mongodb": "^3.3.14",
 		"@typescript-eslint/eslint-plugin": "^2.11.0",
 		"@typescript-eslint/parser": "^2.11.0",
 		"acorn": "^6.0.7",
@@ -155,6 +157,7 @@
 		"fibers": "^3.1.1",
 		"file-type": "^10.6.0",
 		"filesize": "^3.6.1",
+		"good-fences": "^0.9.0",
 		"googleapis": "^25.0.0",
 		"grapheme-splitter": "^1.0.4",
 		"gridfs-stream": "^1.1.1",
@@ -231,7 +234,7 @@
 	},
 	"husky": {
 		"hooks": {
-			"pre-push": "meteor npm run lint && meteor npm run testunit"
+			"pre-push": "meteor npm run lint && meteor npm run testunit && npm run check-architecture-boundaries"
 		}
 	},
 	"houston": {
