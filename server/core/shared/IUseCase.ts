@@ -1,3 +1,3 @@
 export interface IUseCase<TInput, TOutput> {
-	handle(input: TInput): TOutput;
+	execute(input: TInput): TOutput;
 }

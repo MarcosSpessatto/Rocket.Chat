@@ -3,6 +3,6 @@ export interface IWriteOptions {
 }
 
 export interface IWrite<T> {
-	update(filter: Object, item: T | Object, writeOptions?: IWriteOptions): Promise<any>;
+	update(filter: Record<string, any>, item: T | Record<string, any>, writeOptions?: IWriteOptions): Promise<any>;
 	insert(item: T): Promise<any>;
 }

@@ -1,4 +1,3 @@
 {
-	"imports": ["core"],
 	"exports": ["index"]
 }

@@ -1,8 +1,11 @@
+import { Meteor } from 'meteor/meteor';
+
 import './importPackages';
 import '../imports/startup/server';
 
 import '../lib/RegExp';
 
+import './configuration/accounts_meld';
 import './lib/accounts';
 import './lib/cordova';
 import './lib/roomFiles';
@@ -12,7 +15,6 @@ import './startup/cron';
 import './startup/initialData';
 import './startup/presence';
 import './startup/serverRunning';
-import './configuration/accounts_meld';
 import './methods/OEmbedCacheCleanup';
 import './methods/addAllUserToRoom';
 import './methods/addRoomLeader';
@@ -82,7 +84,6 @@ import './routes/avatar';
 import './stream/messages';
 import './stream/rooms';
 import './stream/streamBroadcast';
-import { Meteor } from 'meteor/meteor';
-import { initApplication } from './configuration/init';
+import { initApplication } from './configuration';
 
-Meteor.startup(async() => initApplication());
+Meteor.startup(async () => initApplication());
