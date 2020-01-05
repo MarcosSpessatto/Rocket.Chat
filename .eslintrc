@@ -77,7 +77,8 @@
         "@typescript-eslint/interface-name-prefix": [
           "error",
           "always"
-        ]
+        ],
+        "no-useless-constructor": "off"
       },
       "env": {
         "browser": true,

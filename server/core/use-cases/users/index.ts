@@ -1,1 +1,2 @@
-export { GetUserStatus } from './GetUserStatus';
+export * from './GetUserPresence';
+export * from './SetUserActiveStatus';

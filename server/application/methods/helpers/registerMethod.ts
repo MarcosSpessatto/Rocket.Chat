@@ -1,7 +1,7 @@
 import { Meteor } from 'meteor/meteor';
 
 export interface IWebsocketMethodRegistration {
-	registerMethod(name: string, handler: Function): Function;
+	registerMethod(name: string, handler: Function): void;
 }
 
 export const websocketMethodRegistration = {

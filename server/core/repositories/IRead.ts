@@ -1,8 +1,8 @@
 export interface IReadOptions {
-	offset: number;
-	limit: number;
-	sort: any;
-	fields: any;
+	skip?: number;
+	limit?: number;
+	sort?: any;
+	fields?: any;
 }
 
 export interface IRead<T> {

@@ -1,2 +1,3 @@
-export { MongoDbBaseRepository } from './shared/BaseRepository';
-export { MongoDbUserRepository } from './UserRepository';
+export { MongoDbSubscriptionsRepository } from './SubscriptionsRepository';
+export { MongoDbUsersRepository } from './UsersRepository';
+export { MongoDbPermissionsRepository } from './PermissionsRepository';

@@ -114,43 +114,6 @@ API.v1.addRoute('users.getAvatar', { authRequired: false }, {
 	},
 });
 
-API.v1.addRoute('users.setActiveStatus', { authRequired: true }, {
-	post() {
-		check(this.bodyParams, {
-			userId: String,
-			activeStatus: Boolean,
-		});
-
-		if (!hasPermission(this.userId, 'edit-other-user-active-status')) {
-			return API.v1.unauthorized();
-		}
-
-		Meteor.runAsUser(this.userId, () => {
-			Meteor.call('setUserActiveStatus', this.bodyParams.userId, this.bodyParams.activeStatus);
-		});
-		return API.v1.success({ user: Users.findOneById(this.bodyParams.userId, { fields: { active: 1 } }) });
-	},
-});
-
-// API.v1.addRoute('users.getPresence', { authRequired: true }, {
-// 	get() {
-// 		if (this.isUserFromParams()) {
-// 			const user = Users.findOneById(this.userId);
-// 			return API.v1.success({
-// 				presence: user.status,
-// 				connectionStatus: user.statusConnection,
-// 				lastLogin: user.lastLogin,
-// 			});
-// 		}
-
-// 		const user = this.getUserFromParams();
-
-// 		return API.v1.success({
-// 			presence: user.status,
-// 		});
-// 	},
-// });
-
 API.v1.addRoute('users.info', { authRequired: true }, {
 	get() {
 		const { username, userId } = this.requestParams();
