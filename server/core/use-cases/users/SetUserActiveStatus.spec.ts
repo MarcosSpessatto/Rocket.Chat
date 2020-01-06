@@ -32,6 +32,9 @@ describe('SetUserActiveStatus - UseCase', () => {
 	afterEach(() => {
 		usersRepositoryMock.findOneById.mockClear();
 		authorizationServiceMock.hasPermission.mockClear();
+		settingsServiceMock.getValue.mockClear();
+		emailTemplateServiceMock.subject.mockClear();
+		emailTemplateServiceMock.html.mockClear();
 	});
 
 	describe('#execute()', () => {
