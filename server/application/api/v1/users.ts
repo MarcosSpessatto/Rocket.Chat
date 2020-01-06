@@ -2,7 +2,8 @@ import { check } from 'meteor/check';
 
 import { getUserPresence, setUserActiveStatus } from '../../../configuration';
 import { IRouter } from '../helpers/router';
-import { success } from '../helpers/response';
+import { success, notFound, unauthorized } from '../helpers/response';
+import { PermissionDenied, UserNotFound } from '../../../core';
 
 export const userRoutes = (router: IRouter): void => {
 	router.get('users.getPresence', { authRequired: true }, function() {
@@ -17,15 +18,24 @@ export const userRoutes = (router: IRouter): void => {
 	});
 
 	router.post('users.setActiveStatus', { authRequired: true }, function() {
-		check(this.bodyParams, {
-			userId: String,
-			activeStatus: Boolean,
-		});
-		Promise.await(setUserActiveStatus.execute({
-			userId: this.bodyParams.userId,
-			active: this.bodyParams.activeStatus,
-			userIdWhoExecuteTheAction: this.userId,
-		}));
-		return success({ user: { _id: this.bodyParams.userId, activeStatus: this.bodyParams.activeStatus } });
+		try {
+			check(this.bodyParams, {
+				userId: String,
+				activeStatus: Boolean,
+			});
+			Promise.await(setUserActiveStatus.execute({
+				userId: this.bodyParams.userId,
+				active: this.bodyParams.activeStatus,
+				userIdWhoExecuteTheAction: this.userId,
+			}));
+			return success({ user: { _id: this.bodyParams.userId, active: this.bodyParams.activeStatus } });
+		} catch (error) {
+			if (error instanceof UserNotFound) {
+				return notFound('User not found');
+			}
+			if (error instanceof PermissionDenied) {
+				return unauthorized();
+			}
+		}
 	});
 };

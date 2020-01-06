@@ -28,10 +28,10 @@ export class SetUserActiveStatus implements IUseCase<IInput, Promise<void>> {
 	}
 
 	private async cleanupUserActivationData(userId: string, active: boolean): Promise<void> {
-		if (!active) {
-			await this.usersRepository.unsetLoginTokensById(userId);
-		} else {
+		if (active) {
 			await this.usersRepository.unsetReasonById(userId);
+		} else {
+			await this.usersRepository.unsetLoginTokensById(userId);
 		}
 	}
 

@@ -27,7 +27,9 @@
 		"debug-brk": "meteor run --inspect-brk",
 		"lint": "meteor npm run stylelint && meteor npm run eslint",
 		"jslint": "npm run eslint",
+		"jslint:fix": "npm run eslint:fix",
 		"eslint": "eslint --ext .js,.ts,.jsx,.tsx .",
+		"eslint:fix": "eslint --ext .js,.ts,.jsx,.tsx . --fix",
 		"stylelint": "stylelint \"app/**/*.css\" \"client/**/*.css\"",
 		"test": "node .scripts/start.js",
 		"deploy": "npm run build && pm2 startOrRestart pm2.json",
@@ -45,7 +47,10 @@
 		"release": "meteor npm run set-version --silent",
 		"storybook": "start-storybook -p 6006",
 		"build-storybook": "build-storybook",
-		"check-architecture-boundaries": "gf"
+		"check-server-architecture-boundaries": "gf",
+		"unit-test": "jest --verbose",
+		"unit-test:coverage": "jest --coverage --verbose --bail",
+		"unit-test:watch": "npm run unit-test -- --watchAll"
 	},
 	"license": "MIT",
 	"repository": {
@@ -71,7 +76,10 @@
 		"@storybook/addons": "^5.2.8",
 		"@storybook/react": "^5.2.8",
 		"@types/bcrypt": "^3.0.0",
+		"@types/chai": "^4.2.7",
+		"@types/jest": "^24.0.25",
 		"@types/meteor": "^1.4.37",
+		"@types/mocha": "^5.2.7",
 		"@types/mongodb": "^3.3.14",
 		"@typescript-eslint/eslint-plugin": "^2.11.0",
 		"@typescript-eslint/parser": "^2.11.0",
@@ -91,6 +99,8 @@
 		"fast-glob": "^2.2.6",
 		"husky": "^1.2.0",
 		"i18next": "^17.0.17",
+		"jest": "^24.9.0",
+		"jest-html-reporters": "^1.2.1",
 		"less-loader": "^5.0.0",
 		"mocha": "^5.2.0",
 		"mock-require": "^3.0.2",
@@ -111,6 +121,7 @@
 		"stylelint": "^9.9.0",
 		"stylelint-order": "^2.0.0",
 		"supertest": "^3.3.0",
+		"ts-jest": "^24.2.0",
 		"typescript": "^3.7.3",
 		"webpack": "^4.29.3"
 	},
@@ -234,7 +245,7 @@
 	},
 	"husky": {
 		"hooks": {
-			"pre-push": "meteor npm run lint && meteor npm run testunit && npm run check-architecture-boundaries"
+			"pre-push": "meteor npm run lint && meteor npm run testunit && npm run check-server-architecture-boundaries"
 		}
 	},
 	"houston": {
@@ -250,5 +261,9 @@
 	},
 	"browserslist": [
 		"last 2 versions"
-	]
+	],
+	"jest": {
+		"preset": "ts-jest",
+		"coverageDirectory": ".coverage/"
+	}
 }

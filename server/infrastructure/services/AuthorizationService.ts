@@ -55,7 +55,6 @@ export class AuthorizationService implements IAuthorizationService {
 	}
 
 	private async rolesHasPermission(permission: string, roles: string[]): Promise<boolean> {
-		console.log(permission);
 		const result = await this.permissionsRepository.findOne({ _id: permission, roles: { $in: roles } });
 		return Boolean(result);
 	}

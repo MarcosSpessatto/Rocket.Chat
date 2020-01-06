@@ -1627,20 +1627,6 @@ describe('[Users]', function() {
 					.end(done);
 			});
 		});
-		it('should return an error when trying to set user own active status and has not the necessary permission(edit-other-user-active-status)', (done) => {
-			request.post(api('users.setActiveStatus'))
-				.set(userCredentials)
-				.send({
-					activeStatus: false,
-					userId: user._id,
-				})
-				.expect('Content-Type', 'application/json')
-				.expect(403)
-				.expect((res) => {
-					expect(res.body).to.have.property('success', false);
-				})
-				.end(done);
-		});
 		it('should set user own active status to false when the user has the necessary permission(edit-other-user-active-status)', (done) => {
 			updatePermission('edit-other-user-active-status', ['admin']).then(() => {
 				request.post(api('users.setActiveStatus'))
@@ -1650,9 +1636,10 @@ describe('[Users]', function() {
 						userId: user._id,
 					})
 					.expect('Content-Type', 'application/json')
-					.expect(403)
+					.expect(200)
 					.expect((res) => {
-						expect(res.body).to.have.property('success', false);
+						expect(res.body).to.have.property('success', true);
+						expect(res.body).to.have.nested.property('user.active', false);
 					})
 					.end(done);
 			});

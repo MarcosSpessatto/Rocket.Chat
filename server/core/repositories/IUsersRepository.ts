@@ -1,6 +1,6 @@
 import { IRead } from './IRead';
 import { IWrite } from './IWrite';
-import { IUser } from '../domain/User';
+import { IUser } from '../domain';
 
 export interface IUsersRepository extends IRead<IUser>, IWrite<IUser> {
 	findOneByIdOrUsername(idOrUsername: string): Promise<IUser | null>;
