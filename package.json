@@ -48,8 +48,8 @@
 		"storybook": "start-storybook -p 6006",
 		"build-storybook": "build-storybook",
 		"check-server-architecture-boundaries": "gf",
-		"unit-test": "jest --verbose",
-		"unit-test:coverage": "jest --coverage --verbose --bail",
+		"unit-test": "jest \"server/.*\\.spec\\.ts\" --verbose",
+		"unit-test:coverage": "jest \"server/.*\\.spec\\.ts\" --coverage --verbose --bail",
 		"unit-test:watch": "npm run unit-test -- --watchAll"
 	},
 	"license": "MIT",
