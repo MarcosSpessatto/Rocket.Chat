@@ -205,6 +205,14 @@ jobs:
       run: |
         npm install
 
+    - name: Check server architecture boundaries
+      run: |
+        npm run check-server-architecture-boundaries
+
+    - name: Server unit tests
+      run: |
+        npm run unit-test:coverage
+
     - name: Test
       env:
         TEST_MODE: "true"
