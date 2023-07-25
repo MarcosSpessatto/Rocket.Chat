@@ -1,0 +1,49 @@
+{
+	"extends": ["@rocket.chat/eslint-config", "@rocket.chat/eslint-config/react", "plugin:you-dont-need-lodash-underscore/compatible"],
+	"globals": {
+		"__meteor_bootstrap__": false,
+		"__meteor_runtime_config__": false,
+		"Assets": false,
+		"chrome": false,
+		"jscolor": false
+	},
+	"rules": {
+		"react-hooks/exhaustive-deps": [
+			"warn",
+			{
+				"additionalHooks": "(useComponentDidUpdate)"
+			}
+		]
+	},
+	"overrides": [
+		{
+			"files": ["**/*.ts", "**/*.tsx"],
+			"globals": {
+				"Atomics": "readonly",
+				"SharedArrayBuffer": "readonly"
+			},
+			"rules": {
+				"@typescript-eslint/no-misused-promises": [
+					"error",
+					{
+						"checksVoidReturn": {
+							"arguments": false
+						}
+					}
+				],
+				"@typescript-eslint/no-floating-promises": "error",
+				"no-unreachable-loop": "error"
+			},
+			"parserOptions": {
+				"project": ["./tsconfig.json"]
+			},
+			"excludedFiles": [".scripts/*.ts"]
+		},
+		{
+			"files": ["**/*.tests.js", "**/*.tests.ts", "**/*.spec.ts"],
+			"env": {
+				"mocha": true
+			}
+		}
+	]
+}
