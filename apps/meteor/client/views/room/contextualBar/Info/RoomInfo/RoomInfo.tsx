@@ -1,5 +1,6 @@
 import type { IRoom } from '@rocket.chat/core-typings';
 import { Box, Callout, Menu, Option } from '@rocket.chat/fuselage';
+import { RoomAvatar } from '@rocket.chat/ui-avatar';
 import { useTranslation } from '@rocket.chat/ui-contexts';
 import React, { useMemo } from 'react';
 
@@ -14,26 +15,26 @@ import {
 import InfoPanel from '../../../../../components/InfoPanel';
 import RetentionPolicyCallout from '../../../../../components/InfoPanel/RetentionPolicyCallout';
 import MarkdownText from '../../../../../components/MarkdownText';
-import RoomAvatar from '../../../../../components/avatar/RoomAvatar';
 import type { Action } from '../../../../hooks/useActionSpread';
 import { useActionSpread } from '../../../../hooks/useActionSpread';
-import { useRetentionPolicy } from '../../../components/body/hooks/useRetentionPolicy';
+import { useRetentionPolicy } from '../../../body/hooks/useRetentionPolicy';
 import { useRoomActions } from '../hooks/useRoomActions';
 
 type RoomInfoProps = {
 	room: IRoom;
 	icon: string;
-	onClickBack: () => void;
-	onClickClose: () => void;
+	onClickBack?: () => void;
+	onClickClose?: () => void;
 	onClickEnterRoom?: () => void;
 	onClickEdit?: () => void;
-	resetState: () => void;
+	resetState?: () => void;
 };
 
 const RoomInfo = ({ room, icon, onClickBack, onClickClose, onClickEnterRoom, onClickEdit, resetState }: RoomInfoProps) => {
 	const t = useTranslation();
 	const { name, fname, description, topic, archived, broadcast, announcement } = room;
 	const roomTitle = fname || name;
+	const isDiscussion = 'prid' in room;
 
 	const retentionPolicy = useRetentionPolicy(room);
 	const memoizedActions = useRoomActions(room, { onClickEnterRoom, onClickEdit }, resetState);
@@ -48,7 +49,7 @@ const RoomInfo = ({ room, icon, onClickBack, onClickClose, onClickEnterRoom, onC
 			<Menu
 				small={false}
 				flexShrink={0}
-				mi='x2'
+				flexGrow={0}
 				key='menu'
 				maxHeight='initial'
 				secondary
@@ -70,21 +71,23 @@ const RoomInfo = ({ room, icon, onClickBack, onClickClose, onClickEnterRoom, onC
 		<>
 			<ContextualbarHeader>
 				{onClickBack ? <ContextualbarBack onClick={onClickBack} /> : <ContextualbarIcon name='info-circled' />}
-				<ContextualbarTitle>{t('Room_Info')}</ContextualbarTitle>
+				<ContextualbarTitle>{isDiscussion ? t('Discussion_info') : t('Channel_info')}</ContextualbarTitle>
 				{onClickClose && <ContextualbarClose onClick={onClickClose} />}
 			</ContextualbarHeader>
 
-			<ContextualbarScrollableContent p='x24'>
+			<ContextualbarScrollableContent p={24}>
 				<InfoPanel>
-					<InfoPanel.Avatar>
-						<RoomAvatar size='x332' room={room} />
-					</InfoPanel.Avatar>
+					<InfoPanel.Section maxWidth='x332' mi='auto'>
+						<InfoPanel.Avatar>
+							<RoomAvatar size='x332' room={room} />
+						</InfoPanel.Avatar>
 
-					<InfoPanel.ActionGroup>{actions}</InfoPanel.ActionGroup>
+						<InfoPanel.ActionGroup>{actions}</InfoPanel.ActionGroup>
+					</InfoPanel.Section>
 
 					{archived && (
 						<InfoPanel.Section>
-							<Box mb='x16'>
+							<Box mb={16}>
 								<Callout type='warning'>{t('Room_archived')}</Callout>
 							</Box>
 						</InfoPanel.Section>

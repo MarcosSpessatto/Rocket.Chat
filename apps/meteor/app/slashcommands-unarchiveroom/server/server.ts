@@ -1,15 +1,16 @@
-import { Meteor } from 'meteor/meteor';
 import { api } from '@rocket.chat/core-services';
 import { isRegisterUser } from '@rocket.chat/core-typings';
 import type { SlashCommandCallbackParams } from '@rocket.chat/core-typings';
 import { Users, Rooms } from '@rocket.chat/models';
+import { Meteor } from 'meteor/meteor';
 
-import { slashCommands } from '../../utils/lib/slashCommand';
-import { settings } from '../../settings/server';
-import { roomCoordinator } from '../../../server/lib/rooms/roomCoordinator';
 import { RoomMemberActions } from '../../../definition/IRoomTypeConfig';
-import { unarchiveRoom } from '../../lib/server/functions/unarchiveRoom';
 import { i18n } from '../../../server/lib/i18n';
+import { roomCoordinator } from '../../../server/lib/rooms/roomCoordinator';
+import { hasPermissionAsync } from '../../authorization/server/functions/hasPermission';
+import { unarchiveRoom } from '../../lib/server/functions/unarchiveRoom';
+import { settings } from '../../settings/server';
+import { slashCommands } from '../../utils/lib/slashCommand';
 
 slashCommands.add({
 	command: 'unarchive',
@@ -47,9 +48,12 @@ slashCommands.add({
 			return;
 		}
 
-		// You can not archive direct messages.
 		if (!(await roomCoordinator.getRoomDirectives(room.t).allowMemberAction(room, RoomMemberActions.ARCHIVE, userId))) {
-			return;
+			throw new Meteor.Error('error-room-type-not-unarchivable', `Room type: ${room.t} can not be unarchived`);
+		}
+
+		if (!(await hasPermissionAsync(userId, 'unarchive-room', room._id))) {
+			throw new Meteor.Error('error-not-authorized', 'Not authorized');
 		}
 
 		if (!room.archived) {

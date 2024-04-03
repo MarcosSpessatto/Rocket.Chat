@@ -19,18 +19,13 @@ const getDropdownContainer = (descendant: HTMLElement | null) => {
 
 const useDropdownPosition = (reference: RefObject<HTMLElement>, target: RefObject<HTMLElement>) => {
 	const innerContainer = getDropdownContainer(reference.current);
-	const boundingRect = innerContainer.getBoundingClientRect();
-
 	const viewHeight = document.body.getBoundingClientRect().height;
 	const refTop = reference.current?.getBoundingClientRect().top ?? 0;
 	const targetHeight = target.current?.getBoundingClientRect().height || 0;
 
 	const placement = useMemo(() => {
-		if (boundingRect.top === 0) {
-			return 'top-start';
-		}
 		if (refTop >= viewHeight / 2) {
-			return 'top-end';
+			return 'top-start';
 		}
 		return 'bottom-end';
 	}, [targetHeight, refTop]);
@@ -52,6 +47,10 @@ type EmojiPickerDesktopDropdownProps = {
 	reference: RefObject<HTMLElement>;
 };
 
+/**
+ * @reference is the trigger element target
+ * @ref is the dropdown element target
+ *  */
 const EmojiPickerDesktopDropdown = forwardRef(function ToolboxDropdownDesktop(
 	{ reference, children }: EmojiPickerDesktopDropdownProps,
 	ref: Ref<HTMLElement>,
@@ -62,8 +61,8 @@ const EmojiPickerDesktopDropdown = forwardRef(function ToolboxDropdownDesktop(
 	const style = useDropdownPosition(reference, targetRef);
 
 	return (
-		<Tile is='ul' style={style} ref={mergedRef} elevation='2' pi='0' pb='0' display='flex' flexDirection='column' overflow='auto'>
-			<Box flexShrink={1} pb='x12'>
+		<Tile style={style} ref={mergedRef} elevation='2' pi='0' pb='0' display='flex' flexDirection='column' overflow='auto'>
+			<Box flexShrink={1} pb={12}>
 				{children}
 			</Box>
 		</Tile>

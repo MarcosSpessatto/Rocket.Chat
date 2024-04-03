@@ -8,15 +8,15 @@ import { createCrowdSettings } from './crowd';
 import { createEmojiSettings } from './custom-emoji';
 import { createSoundsSettings } from './custom-sounds';
 import { createDiscussionsSettings } from './discussions';
-import { createEmailSettings } from './email';
 import { createE2ESettings } from './e2e';
+import { createEmailSettings } from './email';
 import { createFederationSettings } from './federation';
 import { createFileUploadSettings } from './file-upload';
 import { createGeneralSettings } from './general';
 import { createIRCSettings } from './irc';
+import { createLayoutSettings } from './layout';
 import { createLdapSettings } from './ldap';
 import { createLogSettings } from './logs';
-import { createLayoutSettings } from './layout';
 import { createMessageSettings } from './message';
 import { createMetaSettings } from './meta';
 import { createMiscSettings } from './misc';
@@ -32,52 +32,48 @@ import { createSlackBridgeSettings } from './slackbridge';
 import { createSmarshSettings } from './smarsh';
 import { createThreadSettings } from './threads';
 import { createTroubleshootSettings } from './troubleshoot';
-import { createVConfSettings } from './video-conference';
 import { createUserDataSettings } from './userDataDownload';
+import { createVConfSettings } from './video-conference';
 import { createWebDavSettings } from './webdav';
 import { createWebRTCSettings } from './webrtc';
 
-async function createSettings() {
-	await Promise.all([
-		createAccountSettings(),
-		createAnalyticsSettings(),
-		createAssetsSettings(),
-		createBotsSettings(),
-		createCallCenterSettings(),
-		createCasSettings(),
-		createCrowdSettings(),
-		createEmojiSettings(),
-		createSoundsSettings(),
-		createDiscussionsSettings(),
-		createEmailSettings(),
-		createE2ESettings(),
-		createFederationSettings(),
-		createFileUploadSettings(),
-		createGeneralSettings(),
-		createIRCSettings(),
-		createLdapSettings(),
-		createLogSettings(),
-		createLayoutSettings(),
-		createMessageSettings(),
-		createMetaSettings(),
-		createMiscSettings(),
-		createMobileSettings(),
-		createOauthSettings(),
-		createOmniSettings(),
-		createOTRSettings(),
-		createPushSettings(),
-		createRateLimitSettings(),
-		createRetentionSettings(),
-		createSetupWSettings(),
-		createSlackBridgeSettings(),
-		createSmarshSettings(),
-		createThreadSettings(),
-		createTroubleshootSettings(),
-		createVConfSettings(),
-		createUserDataSettings(),
-		createWebDavSettings(),
-		createWebRTCSettings(),
-	]);
-}
-
-await createSettings();
+await Promise.all([
+	createAccountSettings(),
+	createAnalyticsSettings(),
+	createAssetsSettings(),
+	createBotsSettings(),
+	createCallCenterSettings(),
+	createCasSettings(),
+	createCrowdSettings(),
+	createEmojiSettings(),
+	createSoundsSettings(),
+	createDiscussionsSettings(),
+	createEmailSettings(),
+	createE2ESettings(),
+	createFederationSettings(),
+	createFileUploadSettings(),
+	createGeneralSettings(),
+	createIRCSettings(),
+	createLdapSettings(),
+	createLogSettings(),
+	createLayoutSettings(),
+	createMessageSettings(),
+	createMetaSettings(),
+	createMiscSettings(),
+	createMobileSettings(),
+	createOauthSettings(),
+	createOmniSettings(),
+	createOTRSettings(),
+	createPushSettings(),
+	createRateLimitSettings(),
+	createRetentionSettings(),
+	createSetupWSettings(),
+	createSlackBridgeSettings(),
+	createSmarshSettings(),
+	createThreadSettings(),
+	createTroubleshootSettings(),
+	createVConfSettings(),
+	createUserDataSettings(),
+	createWebDavSettings(),
+	createWebRTCSettings(),
+]);

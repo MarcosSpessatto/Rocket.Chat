@@ -1,16 +1,17 @@
-import { Meteor } from 'meteor/meteor';
-import { SHA256 } from '@rocket.chat/sha256';
-import { Accounts } from 'meteor/accounts-base';
-import { Users } from '@rocket.chat/models';
 import type { IUser } from '@rocket.chat/core-typings';
 import { cronJobs } from '@rocket.chat/cron';
+import { Users } from '@rocket.chat/models';
+import { SHA256 } from '@rocket.chat/sha256';
+import AtlassianCrowd from 'atlassian-crowd-patched';
+import { Accounts } from 'meteor/accounts-base';
+import { Meteor } from 'meteor/meteor';
 
-import { _setRealName } from '../../lib/server/functions/setRealName';
-import { settings } from '../../settings/server';
-import { deleteUser } from '../../lib/server/functions/deleteUser';
-import { setUserActiveStatus } from '../../lib/server/functions/setUserActiveStatus';
-import { logger } from './logger';
 import { crowdIntervalValuesToCronMap } from '../../../server/settings/crowd';
+import { deleteUser } from '../../lib/server/functions/deleteUser';
+import { _setRealName } from '../../lib/server/functions/setRealName';
+import { setUserActiveStatus } from '../../lib/server/functions/setUserActiveStatus';
+import { settings } from '../../settings/server';
+import { logger } from './logger';
 
 type CrowdUser = Pick<IUser, '_id' | 'username'> & { crowd: Record<string, any>; crowd_username: string };
 
@@ -51,8 +52,6 @@ export class CROWD {
 	};
 
 	constructor() {
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
-		const AtlassianCrowd = require('atlassian-crowd-patched');
 		let url = settings.get<string>('CROWD_URL');
 
 		this.options = {
@@ -69,23 +68,46 @@ export class CROWD {
 		this.crowdClient = new AtlassianCrowd(this.options);
 	}
 
-	async checkConnection() {
-		await this.crowdClient.ping();
+	async checkConnection(): Promise<void> {
+		return new Promise((resolve, reject) =>
+			this.crowdClient.ping((err: any) => {
+				if (err) {
+					reject(err);
+				}
+				resolve();
+			}),
+		);
 	}
 
-	async fetchCrowdUser(crowdUsername: string) {
-		const userResponse = await this.crowdClient.user.find(crowdUsername);
-
-		return {
-			displayname: userResponse['display-name'],
-			username: userResponse.name,
-			email: userResponse.email,
-			active: userResponse.active,
-			crowd_username: crowdUsername,
-		};
+	async fetchCrowdUser(crowdUsername: string): Promise<Record<string, any>> {
+		return new Promise((resolve, reject) =>
+			this.crowdClient.user.find(crowdUsername, (err: any, userResponse: Record<string, any>) => {
+				if (err) {
+					reject(err);
+				}
+				resolve({
+					displayname: userResponse['display-name'],
+					username: userResponse.name,
+					email: userResponse.email,
+					active: userResponse.active,
+					crowd_username: crowdUsername,
+				});
+			}),
+		);
 	}
 
-	async authenticate(username: string, password: string) {
+	async searchForCrowdUserByMail(email?: string): Promise<Record<string, any> | undefined> {
+		return new Promise((resolve) =>
+			this.crowdClient.search('user', `email=" ${email} "`, (err: any, response: Record<string, any>) => {
+				if (err) {
+					resolve(undefined);
+				}
+				resolve(response);
+			}),
+		);
+	}
+
+	async authenticate(username: string, password: string): Promise<Record<string, any> | undefined> {
 		if (!username || !password) {
 			logger.error('No username or password');
 			return;
@@ -135,24 +157,30 @@ export class CROWD {
 			logger.debug('New user. User is not synced yet.');
 		}
 		logger.debug('Going to crowd:', crowdUsername);
-		const auth = await this.crowdClient.user.authenticate(crowdUsername, password);
 
-		if (!auth) {
-			return;
-		}
+		return new Promise((resolve, reject) =>
+			this.crowdClient.user.authenticate(crowdUsername, password, async (err: any, res: Record<string, any>) => {
+				if (err) {
+					reject(err);
+				}
+				const user = res;
+				try {
+					const crowdUser: Record<string, any> = await this.fetchCrowdUser(crowdUsername);
+					if (user && settings.get('CROWD_Allow_Custom_Username') === true) {
+						crowdUser.username = user.name;
+					}
 
-		const crowdUser: Record<string, any> = await this.fetchCrowdUser(crowdUsername);
+					if (user) {
+						crowdUser._id = user._id;
+					}
+					crowdUser.password = password;
 
-		if (user && settings.get('CROWD_Allow_Custom_Username') === true) {
-			crowdUser.username = user.username;
-		}
-
-		if (user) {
-			crowdUser._id = user._id;
-		}
-		crowdUser.password = password;
-
-		return crowdUser;
+					resolve(crowdUser);
+				} catch (err) {
+					reject(err);
+				}
+			}),
+		);
 	}
 
 	async syncDataToUser(crowdUser: Record<string, any>, id: string) {
@@ -220,12 +248,12 @@ export class CROWD {
 				const email = user.emails?.[0].address;
 				logger.info('Attempting to find for user by email', email);
 
-				const response = this.crowdClient.searchSync('user', `email=" ${email} "`);
+				const response = await this.searchForCrowdUserByMail(email);
 				if (!response || response.users.length === 0) {
 					logger.warn('Could not find user in CROWD with username or email:', crowdUsername, email);
 					if (settings.get('CROWD_Remove_Orphaned_Users') === true) {
 						logger.info('Removing user:', crowdUsername);
-						setImmediate(async function () {
+						setImmediate(async () => {
 							await deleteUser(user._id);
 							logger.info('User removed:', crowdUsername);
 						});
@@ -258,8 +286,15 @@ export class CROWD {
 	}
 
 	async updateUserCollection(crowdUser: Record<string, any>) {
+		const username = crowdUser.crowd_username || crowdUser.username;
+		const mail = crowdUser.email;
+
+		// If id is not provided, user is linked by crowd_username or email address
 		const userQuery = {
-			_id: crowdUser._id,
+			...(crowdUser._id && { _id: crowdUser._id }),
+			...(!crowdUser._id && {
+				$or: [{ crowd_username: username }, { 'emails.address': mail }],
+			}),
 		};
 
 		// find our existing user if they exist
@@ -322,16 +357,17 @@ Accounts.registerLoginHandler('crowd', async function (this: typeof Accounts, lo
 		}
 
 		if (!user) {
-			logger.debug(`User ${loginRequest.username} is not allowd to access Rocket.Chat`);
+			logger.debug(`User ${loginRequest.username} is not allowed to access Rocket.Chat`);
 			return new Meteor.Error('not-authorized', 'User is not authorized by crowd');
 		}
 
 		const result = await crowd.updateUserCollection(user);
 
 		return result;
-	} catch (err) {
+	} catch (err: any) {
 		logger.debug({ err });
 		logger.error('Crowd user not authenticated due to an error');
+		throw new Meteor.Error('user-not-found', err.message);
 	}
 });
 

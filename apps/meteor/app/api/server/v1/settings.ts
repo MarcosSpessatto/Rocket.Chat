@@ -1,22 +1,22 @@
-import { Meteor } from 'meteor/meteor';
-import { ServiceConfiguration } from 'meteor/service-configuration';
-import _ from 'underscore';
-import type { ISetting, ISettingColor } from '@rocket.chat/core-typings';
+import type {
+	FacebookOAuthConfiguration,
+	ISetting,
+	ISettingColor,
+	TwitterOAuthConfiguration,
+	OAuthConfiguration,
+} from '@rocket.chat/core-typings';
 import { isSettingAction, isSettingColor } from '@rocket.chat/core-typings';
-import {
-	isOauthCustomConfiguration,
-	isSettingsUpdatePropDefault,
-	isSettingsUpdatePropsActions,
-	isSettingsUpdatePropsColor,
-} from '@rocket.chat/rest-typings';
-import { Settings } from '@rocket.chat/models';
+import { LoginServiceConfiguration as LoginServiceConfigurationModel, Settings } from '@rocket.chat/models';
+import { isSettingsUpdatePropDefault, isSettingsUpdatePropsActions, isSettingsUpdatePropsColor } from '@rocket.chat/rest-typings';
+import { Meteor } from 'meteor/meteor';
 import type { FindOptions } from 'mongodb';
+import _ from 'underscore';
 
 import { hasPermissionAsync } from '../../../authorization/server/functions/hasPermission';
-import type { ResultFor } from '../definition';
-import { API } from '../api';
 import { SettingsEvents, settings } from '../../../settings/server';
 import { setValue } from '../../../settings/server/raw';
+import { API } from '../api';
+import type { ResultFor } from '../definition';
 import { getPaginationItems } from '../helpers/getPaginationItems';
 
 async function fetchSettings(
@@ -71,22 +71,25 @@ API.v1.addRoute(
 	{ authRequired: false },
 	{
 		async get() {
-			const oAuthServicesEnabled = await ServiceConfiguration.configurations.find({}, { fields: { secret: 0 } }).fetchAsync();
+			const oAuthServicesEnabled = await LoginServiceConfigurationModel.find({}, { projection: { secret: 0 } }).toArray();
 
 			return API.v1.success({
 				services: oAuthServicesEnabled.map((service) => {
-					if (!isOauthCustomConfiguration(service)) {
+					if (!service) {
 						return service;
 					}
 
-					if (service.custom || (service.service && ['saml', 'cas', 'wordpress'].includes(service.service))) {
+					if ((service as OAuthConfiguration).custom || (service.service && ['saml', 'cas', 'wordpress'].includes(service.service))) {
 						return { ...service };
 					}
 
 					return {
 						_id: service._id,
 						name: service.service,
-						clientId: service.appId || service.clientId || service.consumerKey,
+						clientId:
+							(service as FacebookOAuthConfiguration).appId ||
+							(service as OAuthConfiguration).clientId ||
+							(service as TwitterOAuthConfiguration).consumerKey,
 						buttonLabelText: service.buttonLabelText || '',
 						buttonColor: service.buttonColor || '',
 						buttonLabelColor: service.buttonLabelColor || '',
@@ -215,7 +218,7 @@ API.v1.addRoute(
 	{
 		async get() {
 			return API.v1.success({
-				configurations: await ServiceConfiguration.configurations.find({}, { fields: { secret: 0 } }).fetchAsync(),
+				configurations: await LoginServiceConfigurationModel.find({}, { projection: { secret: 0 } }).toArray(),
 			});
 		},
 	},

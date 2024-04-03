@@ -1,5 +1,6 @@
 import type { ILivechatDepartmentAgents, RocketChatRecordDeleted, IUser } from '@rocket.chat/core-typings';
 import type { FindPaginated, ILivechatDepartmentAgentsModel } from '@rocket.chat/model-typings';
+import { Users } from '@rocket.chat/models';
 import type {
 	Collection,
 	FindCursor,
@@ -12,7 +13,6 @@ import type {
 	IndexDescription,
 	SortDirection,
 } from 'mongodb';
-import { Users } from '@rocket.chat/models';
 
 import { BaseRaw } from './BaseRaw';
 
@@ -78,8 +78,12 @@ export class LivechatDepartmentAgentsRaw extends BaseRaw<ILivechatDepartmentAgen
 		return this.find(query, options);
 	}
 
-	findByAgentId(agentId: string): FindCursor<ILivechatDepartmentAgents> {
-		return this.find({ agentId });
+	findByAgentIds(agentIds: string[], options?: FindOptions<ILivechatDepartmentAgents>): FindCursor<ILivechatDepartmentAgents> {
+		return this.find({ agentId: { $in: agentIds } }, options);
+	}
+
+	findByAgentId(agentId: string, options?: FindOptions<ILivechatDepartmentAgents>): FindCursor<ILivechatDepartmentAgents> {
+		return this.find({ agentId }, options);
 	}
 
 	findAgentsByDepartmentId(departmentId: string): FindPaginated<FindCursor<ILivechatDepartmentAgents>>;
@@ -151,12 +155,16 @@ export class LivechatDepartmentAgentsRaw extends BaseRaw<ILivechatDepartmentAgen
 		return this.deleteOne({ departmentId });
 	}
 
-	findByDepartmentId(departmentId: string): FindCursor<ILivechatDepartmentAgents> {
-		return this.find({ departmentId });
+	findByDepartmentId(departmentId: string, options?: FindOptions<ILivechatDepartmentAgents>): FindCursor<ILivechatDepartmentAgents> {
+		return this.find({ departmentId }, options);
 	}
 
-	findOneByAgentIdAndDepartmentId(agentId: string, departmentId: string): Promise<ILivechatDepartmentAgents | null> {
-		return this.findOne({ agentId, departmentId });
+	findOneByAgentIdAndDepartmentId(
+		agentId: string,
+		departmentId: string,
+		options?: FindOptions<ILivechatDepartmentAgents>,
+	): Promise<ILivechatDepartmentAgents | null> {
+		return this.findOne({ agentId, departmentId }, options);
 	}
 
 	saveAgent(agent: {
@@ -234,7 +242,7 @@ export class LivechatDepartmentAgentsRaw extends BaseRaw<ILivechatDepartmentAgen
 			},
 		};
 
-		const agent = await this.col.findOneAndUpdate(query, update, { sort, returnDocument: 'after' });
+		const agent = await this.findOneAndUpdate(query, update, { sort, returnDocument: 'after' });
 		if (agent?.value) {
 			return {
 				agentId: agent.value.agentId,
@@ -332,7 +340,7 @@ export class LivechatDepartmentAgentsRaw extends BaseRaw<ILivechatDepartmentAgen
 			},
 		};
 
-		const bot = await this.col.findOneAndUpdate(query, update, { sort, returnDocument: 'after' });
+		const bot = await this.findOneAndUpdate(query, update, { sort, returnDocument: 'after' });
 		if (bot?.value) {
 			return {
 				agentId: bot.value.agentId,

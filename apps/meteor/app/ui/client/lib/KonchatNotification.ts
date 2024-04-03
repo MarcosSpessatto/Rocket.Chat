@@ -1,19 +1,19 @@
-import type { IMessage, IRoom, IUser, RoomType } from '@rocket.chat/core-typings';
-import { ReactiveVar } from 'meteor/reactive-var';
+import type { INotificationDesktop, IRoom, IUser } from '@rocket.chat/core-typings';
 import { Random } from '@rocket.chat/random';
 import { Meteor } from 'meteor/meteor';
+import { ReactiveVar } from 'meteor/reactive-var';
 
+import { RoomManager } from '../../../../client/lib/RoomManager';
 import { onClientMessageReceived } from '../../../../client/lib/onClientMessageReceived';
-import { getUserPreference } from '../../../utils/client';
-import { getUserAvatarURL } from '../../../utils/client/getUserAvatarURL';
+import { getAvatarAsPng } from '../../../../client/lib/utils/getAvatarAsPng';
+import { router } from '../../../../client/providers/RouterProvider';
+import { stripTags } from '../../../../lib/utils/stringUtils';
+import { CustomSounds } from '../../../custom-sounds/client/lib/CustomSounds';
 import { e2e } from '../../../e2e/client';
 import { ChatSubscription } from '../../../models/client';
-import { CustomSounds } from '../../../custom-sounds/client/lib/CustomSounds';
-import { getAvatarAsPng } from '../../../../client/lib/utils/getAvatarAsPng';
-import { stripTags } from '../../../../lib/utils/stringUtils';
-import { RoomManager } from '../../../../client/lib/RoomManager';
+import { getUserPreference } from '../../../utils/client';
+import { getUserAvatarURL } from '../../../utils/client/getUserAvatarURL';
 import { sdk } from '../../../utils/client/lib/SDKClient';
-import { router } from '../../../../client/providers/RouterProvider';
 
 declare global {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -21,25 +21,6 @@ declare global {
 		reply: { response: string };
 	}
 }
-
-export type NotificationEvent = {
-	icon?: string;
-	title: string;
-	text: string;
-	duration?: number;
-	payload: {
-		_id?: IMessage['_id'];
-		rid?: IRoom['_id'];
-		tmid?: IMessage['_id'];
-		sender?: Pick<IUser, '_id' | 'username'>;
-		type?: RoomType;
-		name?: string;
-		message?: {
-			msg: string;
-			t?: string;
-		};
-	};
-};
 
 class KonchatNotification {
 	public notificationStatus = new ReactiveVar<NotificationPermission | undefined>(undefined);
@@ -52,7 +33,7 @@ class KonchatNotification {
 		}
 	}
 
-	public async notify(notification: NotificationEvent) {
+	public async notify(notification: INotificationDesktop) {
 		if (typeof window.Notification === 'undefined' || Notification.permission !== 'granted') {
 			return;
 		}
@@ -146,11 +127,20 @@ class KonchatNotification {
 						},
 						search: { ...router.getSearchParameters(), jump: notification.payload._id },
 					});
+				case 'l':
+					return router.navigate({
+						pattern: '/live/:id/:tab?/:context?',
+						params: {
+							id: notification.payload.rid,
+							tab: 'room-info',
+						},
+						search: { ...router.getSearchParameters(), jump: notification.payload._id },
+					});
 			}
 		};
 	}
 
-	public async showDesktop(notification: NotificationEvent) {
+	public async showDesktop(notification: INotificationDesktop) {
 		if (!notification.payload.rid) {
 			return;
 		}

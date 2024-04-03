@@ -3,7 +3,7 @@ import type { Extension } from '@codemirror/state';
 import { EditorView } from 'codemirror';
 import { useCallback, useEffect, useState, useRef } from 'react';
 
-type changes = {
+export type ICodeMirrorChanges = {
   value: string;
   isDispatch: boolean;
   cursor?: number;
@@ -12,7 +12,7 @@ type changes = {
 export default function useCodeMirror(extensions?: Extension[], doc?: string) {
   const view = useRef<EditorView>();
   const [element, setElement] = useState<HTMLElement>();
-  const [changes, setChanges] = useState<changes>({
+  const [changes, setChanges] = useState<ICodeMirrorChanges>({
     value: '[]',
     isDispatch: true,
     cursor: 0,
@@ -28,8 +28,7 @@ export default function useCodeMirror(extensions?: Extension[], doc?: string) {
     if (update.docChanged) {
       setChanges({
         value: view.current?.state?.doc.toString() || '',
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
+        // @ts-expect-error Property 'annotations' does not exist on type 'Transaction'. Did you mean 'annotation'?
         isDispatch: update?.transactions[0]?.annotations?.length === 1 || false,
         cursor: view.current?.state?.selection?.main?.head || 0,
       });
@@ -74,7 +73,8 @@ export default function useCodeMirror(extensions?: Extension[], doc?: string) {
     });
 
     return () => view.current?.destroy();
-  }, [doc, element, extensions, updateListener]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [element]);
 
   return { editor, changes, setValue };
 }

@@ -12,7 +12,7 @@ import {
 	ContextualbarClose,
 	ContextualbarEmptyContent,
 } from '../../../components/Contextualbar';
-import ScrollableContentWrapper from '../../../components/ScrollableContentWrapper';
+import { VirtuosoScrollbars } from '../../../components/CustomScrollbars';
 import { useRecordList } from '../../../hooks/lists/useRecordList';
 import { AsyncStatePhase } from '../../../lib/asyncState';
 import { useOmnichannelRoom } from '../../room/contexts/RoomContext';
@@ -45,14 +45,14 @@ const ContactHistoryList = ({ setChatId, close }: { setChatId: Dispatch<SetState
 				<Box
 					display='flex'
 					flexDirection='row'
-					p='x24'
+					p={24}
 					borderBlockEndWidth='default'
 					borderBlockEndStyle='solid'
 					borderBlockEndColor='extra-light'
 					flexShrink={0}
 				>
 					<Box display='flex' flexDirection='row' flexGrow={1} mi='neg-x4'>
-						<Margins inline='x4'>
+						<Margins inline={4}>
 							<TextInput
 								placeholder={t('Search_Chat_History')}
 								value={text}
@@ -63,7 +63,7 @@ const ContactHistoryList = ({ setChatId, close }: { setChatId: Dispatch<SetState
 					</Box>
 				</Box>
 				{phase === AsyncStatePhase.LOADING && (
-					<Box pi='x24' pb='x12'>
+					<Box pi={24} pb={12}>
 						<Throbber size='x12' />
 					</Box>
 				)}
@@ -86,7 +86,7 @@ const ContactHistoryList = ({ setChatId, close }: { setChatId: Dispatch<SetState
 							}
 							overscan={25}
 							data={history}
-							components={{ Scroller: ScrollableContentWrapper as any }}
+							components={{ Scroller: VirtuosoScrollbars }}
 							itemContent={(index, data): ReactElement => <ContactHistoryItem key={index} history={data} setChatId={setChatId} />}
 						/>
 					)}

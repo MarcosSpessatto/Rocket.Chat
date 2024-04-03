@@ -6,7 +6,7 @@ import type { VFC } from 'react';
 import React from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
-import ScrollableContentWrapper from '../../../components/ScrollableContentWrapper';
+import { VirtuosoScrollbars } from '../../../components/CustomScrollbars';
 import { roomCoordinator } from '../../../lib/rooms/roomCoordinator';
 import FederatedRoomListEmptyPlaceholder from './FederatedRoomListEmptyPlaceholder';
 import FederatedRoomListItem from './FederatedRoomListItem';
@@ -60,7 +60,7 @@ const FederatedRoomList: VFC<FederatedRoomListProps> = ({ serverName, roomName, 
 
 	const flattenedData = data?.pages.flatMap((page) => page.rooms);
 	return (
-		<Box is='ul' overflow='hidden' height='356px' flexGrow={1} flexShrink={0}>
+		<Box is='ul' overflow='hidden' height='356px' flexGrow={1} flexShrink={0} mi={-24}>
 			<Virtuoso
 				data={flattenedData || []}
 				computeItemKey={(index, room) => room?.id || index}
@@ -68,7 +68,7 @@ const FederatedRoomList: VFC<FederatedRoomListProps> = ({ serverName, roomName, 
 				components={{
 					// eslint-disable-next-line react/no-multi-comp
 					Footer: () => (isFetchingNextPage ? <Throbber /> : null),
-					Scroller: ScrollableContentWrapper,
+					Scroller: VirtuosoScrollbars,
 					EmptyPlaceholder: FederatedRoomListEmptyPlaceholder,
 				}}
 				endReached={isLoading || isFetchingNextPage ? () => undefined : () => fetchNextPage()}

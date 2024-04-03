@@ -1,8 +1,11 @@
 import { css } from '@rocket.chat/css-in-js';
 import { Box, Label } from '@rocket.chat/fuselage';
-import type { FC } from 'react';
+import type { ComponentProps, FC } from 'react';
 
-const MenuItem: FC<{ name: string }> = ({ name }) => {
+const MenuItem: FC<{ name: string } & ComponentProps<typeof Box>> = ({
+  name,
+  ...props
+}) => {
   const pointer = css`
     cursor: pointer;
   `;
@@ -18,14 +21,15 @@ const MenuItem: FC<{ name: string }> = ({ name }) => {
   `;
   return (
     <Box
-      width='100%'
-      height='28px'
-      paddingBlock='4px'
-      display='flex'
-      alignItems='center'
+      width="100%"
+      height="28px"
+      paddingBlock="4px"
+      display="flex"
+      alignItems="center"
       className={[pointer, style]}
+      {...props}
     >
-      <Label className={pointer} color='hint' fontSize={'x14'}>
+      <Label className={pointer} color="hint" fontScale="p2">
         {name}
       </Label>
     </Box>

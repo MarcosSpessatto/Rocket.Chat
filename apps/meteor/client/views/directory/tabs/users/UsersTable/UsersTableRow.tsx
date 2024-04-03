@@ -1,10 +1,10 @@
 import type { IUser, Serialized } from '@rocket.chat/core-typings';
 import { Box, Flex } from '@rocket.chat/fuselage';
+import { UserAvatar } from '@rocket.chat/ui-avatar';
 import React from 'react';
 
 import { GenericTableRow, GenericTableCell } from '../../../../../components/GenericTable';
 import MarkdownText from '../../../../../components/MarkdownText';
-import UserAvatar from '../../../../../components/avatar/UserAvatar';
 import { useFormatDate } from '../../../../../hooks/useFormatDate';
 
 type UsersTableRowProps = {
@@ -30,13 +30,13 @@ const UsersTableRow = ({
 				<Flex.Container>
 					<Box>
 						<Flex.Item>{username && <UserAvatar size='x40' title={username} username={username} etag={avatarETag} />}</Flex.Item>
-						<Box withTruncatedText mi='x8'>
+						<Box withTruncatedText mi={8}>
 							<Box display='flex'>
 								<Box fontScale='p2m' withTruncatedText>
 									{name || username}
 									{nickname && ` (${nickname})`}
 								</Box>{' '}
-								<Box mi='x4' />{' '}
+								<Box mi={4} />{' '}
 								<Box fontScale='p2' color='hint' withTruncatedText>
 									{username}
 								</Box>

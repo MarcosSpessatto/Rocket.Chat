@@ -1,9 +1,10 @@
-import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
 import type { ServerMethods } from '@rocket.chat/ui-contexts';
+import { check } from 'meteor/check';
+import { Meteor } from 'meteor/meteor';
 
-import { saveUser } from '../functions/saveUser';
 import { twoFactorRequired } from '../../../2fa/server/twoFactorRequired';
+import { saveUser } from '../functions/saveUser';
+import { methodDeprecationLogger } from '../lib/deprecationWarningLogger';
 
 declare module '@rocket.chat/ui-contexts' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -13,7 +14,9 @@ declare module '@rocket.chat/ui-contexts' {
 }
 
 Meteor.methods<ServerMethods>({
-	insertOrUpdateUser: twoFactorRequired(async function (userData) {
+	insertOrUpdateUser: twoFactorRequired(async (userData) => {
+		methodDeprecationLogger.method('insertOrUpdateUser', '8.0.0');
+
 		check(userData, Object);
 
 		if (!Meteor.userId()) {

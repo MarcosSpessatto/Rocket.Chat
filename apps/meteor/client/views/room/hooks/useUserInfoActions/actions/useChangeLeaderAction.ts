@@ -4,12 +4,11 @@ import { useTranslation, usePermission, useUserRoom, useUserSubscription } from 
 import { useMemo } from 'react';
 
 import { useEndpointAction } from '../../../../../hooks/useEndpointAction';
-import type { Action } from '../../../../hooks/useActionSpread';
 import { getRoomDirectives } from '../../../lib/getRoomDirectives';
 import { useUserHasRoomRole } from '../../useUserHasRoomRole';
+import type { UserInfoAction, UserInfoActionType } from '../useUserInfoActions';
 
-// TODO: Remove endpoint concatenation
-export const useChangeLeaderAction = (user: Pick<IUser, '_id' | 'username'>, rid: IRoom['_id']): Action | undefined => {
+export const useChangeLeaderAction = (user: Pick<IUser, '_id' | 'username'>, rid: IRoom['_id']): UserInfoAction | undefined => {
 	const t = useTranslation();
 	const room = useUserRoom(rid);
 	const { _id: uid } = user;
@@ -20,10 +19,10 @@ export const useChangeLeaderAction = (user: Pick<IUser, '_id' | 'username'>, rid
 		throw Error('Room not provided');
 	}
 
-	const endpointPrefix = room.t === 'p' ? '/v1/groups' : '/v1/channels';
 	const { roomCanSetLeader } = getRoomDirectives({ room, showingUserId: uid, userSubscription });
 	const isLeader = useUserHasRoomRole(uid, rid, 'leader');
 
+	const endpointPrefix = room.t === 'p' ? '/v1/groups' : '/v1/channels';
 	const changeLeaderEndpoint = isLeader ? 'removeLeader' : 'addLeader';
 	const changeLeaderMessage = isLeader ? 'removed__username__as__role_' : 'set__username__as__role_';
 	const changeLeader = useEndpointAction('POST', `${endpointPrefix}.${changeLeaderEndpoint}`, {
@@ -34,9 +33,10 @@ export const useChangeLeaderAction = (user: Pick<IUser, '_id' | 'username'>, rid
 		() =>
 			roomCanSetLeader && userCanSetLeader
 				? {
-						label: t(isLeader ? 'Remove_as_leader' : 'Set_as_leader'),
+						content: t(isLeader ? 'Remove_as_leader' : 'Set_as_leader'),
 						icon: 'shield-alt' as const,
-						action: changeLeaderAction,
+						onClick: changeLeaderAction,
+						type: 'privileges' as UserInfoActionType,
 				  }
 				: undefined,
 		[isLeader, roomCanSetLeader, t, userCanSetLeader, changeLeaderAction],

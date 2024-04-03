@@ -1,11 +1,11 @@
 import { AutoComplete, Option, Box } from '@rocket.chat/fuselage';
 import { useDebouncedValue } from '@rocket.chat/fuselage-hooks';
+import { RoomAvatar } from '@rocket.chat/ui-avatar';
 import { useEndpoint } from '@rocket.chat/ui-contexts';
 import { useQuery } from '@tanstack/react-query';
 import type { ReactElement, ComponentProps } from 'react';
 import React, { memo, useMemo, useState } from 'react';
 
-import RoomAvatar from '../avatar/RoomAvatar';
 import Avatar from './Avatar';
 
 const generateQuery = (
@@ -45,10 +45,10 @@ const RoomAutoComplete = ({ value, onChange, ...props }: RoomAutoCompleteProps):
 			setFilter={setFilter}
 			renderSelected={({ selected: { value, label } }): ReactElement => (
 				<>
-					<Box margin='none' mi='x2'>
+					<Box margin='none' mi={2}>
 						<RoomAvatar size='x20' room={{ type: label?.type || 'c', _id: value, ...label }} />
 					</Box>
-					<Box margin='none' mi='x2'>
+					<Box margin='none' mi={2}>
 						{label?.name}
 					</Box>
 				</>

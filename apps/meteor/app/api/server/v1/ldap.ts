@@ -1,10 +1,10 @@
-import { Match, check } from 'meteor/check';
 import { LDAP } from '@rocket.chat/core-services';
+import { Match, check } from 'meteor/check';
 
+import { SystemLogger } from '../../../../server/lib/logger/system';
 import { hasPermissionAsync } from '../../../authorization/server/functions/hasPermission';
 import { settings } from '../../../settings/server';
 import { API } from '../api';
-import { SystemLogger } from '../../../../server/lib/logger/system';
 
 API.v1.addRoute(
 	'ldap.testConnection',
@@ -31,7 +31,7 @@ API.v1.addRoute(
 			}
 
 			return API.v1.success({
-				message: 'Connection_success' as const,
+				message: 'LDAP_Connection_successful' as const,
 			});
 		},
 	},

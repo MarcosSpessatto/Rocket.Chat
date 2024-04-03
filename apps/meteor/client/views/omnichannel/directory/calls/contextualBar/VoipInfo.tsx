@@ -1,11 +1,11 @@
 import type { IVoipRoom } from '@rocket.chat/core-typings';
 import { Box, Icon, Chip, ButtonGroup } from '@rocket.chat/fuselage';
+import { UserAvatar } from '@rocket.chat/ui-avatar';
 import { useTranslation } from '@rocket.chat/ui-contexts';
 import moment from 'moment';
 import type { ReactElement } from 'react';
 import React, { useMemo } from 'react';
 
-import { parseOutboundPhoneNumber } from '../../../../../../ee/client/lib/voip/parseOutboundPhoneNumber';
 import {
 	ContextualbarIcon,
 	ContextualbarHeader,
@@ -16,8 +16,8 @@ import {
 } from '../../../../../components/Contextualbar';
 import InfoPanel from '../../../../../components/InfoPanel';
 import { UserStatus } from '../../../../../components/UserStatus';
-import UserAvatar from '../../../../../components/avatar/UserAvatar';
 import { useIsCallReady } from '../../../../../contexts/CallContext';
+import { parseOutboundPhoneNumber } from '../../../../../lib/voip/parseOutboundPhoneNumber';
 import AgentInfoDetails from '../../../components/AgentInfoDetails';
 import AgentField from '../../components/AgentField';
 import { InfoField } from './InfoField';
@@ -55,7 +55,7 @@ export const VoipInfo = ({ room, onClickClose /* , onClickReport  */ }: VoipInfo
 					<InfoPanel.Field>
 						<InfoPanel.Label>{t('Channel')}</InfoPanel.Label>
 						<Box color='default'>
-							<Icon size='x24' name='phone' />
+							<Icon size='x24' name='phone' verticalAlign='middle' />
 							{t('Voice_Call')}
 						</Box>
 					</InfoPanel.Field>
@@ -65,7 +65,7 @@ export const VoipInfo = ({ room, onClickClose /* , onClickReport  */ }: VoipInfo
 							<InfoPanel.Label>{t('Contact')}</InfoPanel.Label>
 							<Box display='flex'>
 								<UserAvatar size='x28' username={_name} />
-								<AgentInfoDetails mis='x8' name={parseOutboundPhoneNumber(_name)} status={<UserStatus status={v?.status} />} />
+								<AgentInfoDetails mis={8} name={parseOutboundPhoneNumber(_name)} status={<UserStatus status={v?.status} />} />
 							</Box>
 						</InfoPanel.Field>
 					)}
@@ -82,7 +82,7 @@ export const VoipInfo = ({ room, onClickClose /* , onClickReport  */ }: VoipInfo
 							<InfoPanel.Text>
 								<Box display='flex' flexDirection='row' alignItems='center'>
 									{tags?.map((tag: string) => (
-										<Chip mie='x4' key={tag} value={tag}>
+										<Chip mie={4} key={tag} value={tag}>
 											{tag}
 										</Chip>
 									))}

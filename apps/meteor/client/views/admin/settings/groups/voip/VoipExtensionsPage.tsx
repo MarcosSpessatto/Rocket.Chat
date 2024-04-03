@@ -1,4 +1,5 @@
 import { Box, Chip, Button, Pagination } from '@rocket.chat/fuselage';
+import { UserAvatar } from '@rocket.chat/ui-avatar';
 import { useSetModal, useTranslation, useEndpoint } from '@rocket.chat/ui-contexts';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
@@ -14,8 +15,7 @@ import {
 	GenericTableLoadingRow,
 } from '../../../../../components/GenericTable';
 import { usePagination } from '../../../../../components/GenericTable/hooks/usePagination';
-import Page from '../../../../../components/Page';
-import UserAvatar from '../../../../../components/avatar/UserAvatar';
+import { PageContent } from '../../../../../components/Page';
 import AssignAgentButton from './AssignAgentButton';
 import AssignAgentModal from './AssignAgentModal';
 import RemoveAgentButton from './RemoveAgentButton';
@@ -35,9 +35,7 @@ const VoipExtensionsPage = () => {
 	);
 
 	const getExtensions = useEndpoint('GET', '/v1/omnichannel/extensions');
-	const { data, isSuccess, isLoading, refetch } = useQuery(['omnichannel-extensions', query], async () => getExtensions(query), {
-		refetchOnWindowFocus: false,
-	});
+	const { data, isSuccess, isLoading, refetch } = useQuery(['omnichannel-extensions', query], async () => getExtensions(query));
 
 	const headers = (
 		<>
@@ -58,8 +56,8 @@ const VoipExtensionsPage = () => {
 	);
 
 	return (
-		<Page.Content>
-			<Box display='flex' flexDirection='row' alignItems='center' justifyContent='space-between' mb='x14'>
+		<PageContent>
+			<Box display='flex' flexDirection='row' alignItems='center' justifyContent='space-between' mb={14}>
 				<Box fontScale='p2' color='hint'>
 					{data?.total} {t('Extensions')}
 				</Box>
@@ -90,7 +88,7 @@ const VoipExtensionsPage = () => {
 										{username ? (
 											<Box display='flex' alignItems='center'>
 												<UserAvatar size='x28' username={username} />
-												<Box display='flex' mi='x8'>
+												<Box display='flex' mi={8}>
 													<Box display='flex' flexDirection='column' alignSelf='center'>
 														<Box fontScale='p2m' color='default'>
 															{name || username}
@@ -108,7 +106,7 @@ const VoipExtensionsPage = () => {
 											{queues?.map(
 												(queue: string, index: number) =>
 													index <= 1 && (
-														<Chip mie='x4' key={queue} value={queue}>
+														<Chip mie={4} key={queue} value={queue}>
 															{queue}
 														</Chip>
 													),
@@ -136,7 +134,7 @@ const VoipExtensionsPage = () => {
 					/>
 				</>
 			)}
-		</Page.Content>
+		</PageContent>
 	);
 };
 

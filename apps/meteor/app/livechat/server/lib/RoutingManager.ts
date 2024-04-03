@@ -1,7 +1,5 @@
-import { Meteor } from 'meteor/meteor';
-import { Match, check } from 'meteor/check';
-import { LivechatInquiry, LivechatRooms, Subscriptions, Rooms, Users } from '@rocket.chat/models';
-import { Message } from '@rocket.chat/core-services';
+import { Apps, AppEvents } from '@rocket.chat/apps';
+import { Message, Omnichannel } from '@rocket.chat/core-services';
 import type {
 	ILivechatInquiryRecord,
 	ILivechatVisitor,
@@ -11,8 +9,16 @@ import type {
 	RoutingMethodConfig,
 	SelectedAgent,
 	InquiryWithAgentInfo,
+	TransferData,
 } from '@rocket.chat/core-typings';
+import { License } from '@rocket.chat/license';
+import { Logger } from '@rocket.chat/logger';
+import { LivechatInquiry, LivechatRooms, Subscriptions, Rooms, Users } from '@rocket.chat/models';
+import { Match, check } from 'meteor/check';
+import { Meteor } from 'meteor/meteor';
 
+import { callbacks } from '../../../../lib/callbacks';
+import { settings } from '../../../settings/server';
 import {
 	createLivechatSubscription,
 	dispatchAgentDelegated,
@@ -23,18 +29,13 @@ import {
 	updateChatDepartment,
 	allowAgentSkipQueue,
 } from './Helper';
-import { callbacks } from '../../../../lib/callbacks';
-import { Logger } from '../../../../server/lib/logger/Logger';
-import { Apps, AppEvents } from '../../../../ee/server/apps';
 
 const logger = new Logger('RoutingManager');
 
 type Routing = {
-	methodName: string | null;
 	methods: Record<string, IRoutingMethod>;
-	startQueue(): void;
+	startQueue(): Promise<void>;
 	isMethodSet(): boolean;
-	setMethodNameAndStartQueue(name: string): void;
 	registerMethod(name: string, Method: IRoutingMethodConstructor): void;
 	getMethod(): IRoutingMethod;
 	getConfig(): RoutingMethodConfig | undefined;
@@ -42,8 +43,8 @@ type Routing = {
 	delegateInquiry(
 		inquiry: InquiryWithAgentInfo,
 		agent?: SelectedAgent | null,
-		options?: { clientAction?: boolean; forwardingToDepartment?: { oldDepartmentId: string; transferData: any } },
-	): Promise<IOmnichannelRoom | null | void>;
+		options?: { clientAction?: boolean; forwardingToDepartment?: { oldDepartmentId?: string; transferData?: any } },
+	): Promise<(IOmnichannelRoom & { chatQueued?: boolean }) | null | void>;
 	assignAgent(inquiry: InquiryWithAgentInfo, agent: SelectedAgent): Promise<InquiryWithAgentInfo>;
 	unassignAgent(inquiry: ILivechatInquiryRecord, departmentId?: string): Promise<boolean>;
 	takeInquiry(
@@ -52,60 +53,41 @@ type Routing = {
 			'estimatedInactivityCloseTimeAt' | 'message' | 't' | 'source' | 'estimatedWaitingTimeQueue' | 'priorityWeight' | '_updatedAt'
 		>,
 		agent: SelectedAgent | null,
-		options?: { clientAction?: boolean; forwardingToDepartment?: { oldDepartmentId: string; transferData: any } },
+		options?: { clientAction?: boolean; forwardingToDepartment?: { oldDepartmentId?: string; transferData?: any } },
 	): Promise<IOmnichannelRoom | null | void>;
-	transferRoom(
-		room: IOmnichannelRoom,
-		guest: ILivechatVisitor,
-		transferData: {
-			departmentId?: string;
-			userId?: string;
-			transferredBy: { _id: string };
-		},
-	): Promise<boolean>;
-	delegateAgent(agent: SelectedAgent, inquiry: ILivechatInquiryRecord): Promise<SelectedAgent | null | undefined>;
+	transferRoom(room: IOmnichannelRoom, guest: ILivechatVisitor, transferData: TransferData): Promise<boolean>;
+	delegateAgent(agent: SelectedAgent | undefined, inquiry: ILivechatInquiryRecord): Promise<SelectedAgent | null | undefined>;
 	removeAllRoomSubscriptions(room: Pick<IOmnichannelRoom, '_id'>, ignoreUser?: { _id: string }): Promise<void>;
 };
 
 export const RoutingManager: Routing = {
-	methodName: null,
 	methods: {},
 
-	startQueue() {
-		// todo: move to eventemitter or middleware
-		// queue shouldn't start on CE
+	async startQueue() {
+		const shouldPreventQueueStart = await License.shouldPreventAction('monthlyActiveContacts');
+
+		if (shouldPreventQueueStart) {
+			logger.error('Monthly Active Contacts limit reached. Queue will not start');
+			return;
+		}
+		void (await Omnichannel.getQueueWorker()).shouldStart();
 	},
 
 	isMethodSet() {
-		return !!this.methodName;
-	},
-
-	setMethodNameAndStartQueue(name) {
-		logger.debug(`Changing default routing method from ${this.methodName} to ${name}`);
-		if (!this.methods[name]) {
-			logger.warn(`Cannot change routing method to ${name}. Selected Routing method does not exists. Defaulting to Manual_Selection`);
-			this.methodName = 'Manual_Selection';
-		} else {
-			this.methodName = name;
-		}
-
-		this.startQueue();
+		return settings.get<string>('Livechat_Routing_Method') !== '';
 	},
 
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	registerMethod(name, Method) {
-		logger.debug(`Registering new routing method with name ${name}`);
 		this.methods[name] = new Method();
 	},
 
 	getMethod() {
-		if (!this.methodName) {
-			throw new Meteor.Error('error-routing-method-not-set');
-		}
-		if (!this.methods[this.methodName]) {
+		const setting = settings.get<string>('Livechat_Routing_Method');
+		if (!this.methods[setting]) {
 			throw new Meteor.Error('error-routing-method-not-available');
 		}
-		return this.methods[this.methodName];
+		return this.methods[setting];
 	},
 
 	getConfig() {
@@ -113,7 +95,7 @@ export const RoutingManager: Routing = {
 	},
 
 	async getNextAgent(department, ignoreAgentId) {
-		logger.debug(`Getting next available agent with method ${this.methodName}`);
+		logger.debug(`Getting next available agent with method ${settings.get('Livechat_Routing_Method')}`);
 		return this.getMethod().getNextAgent(department, ignoreAgentId);
 	},
 
@@ -164,10 +146,15 @@ export const RoutingManager: Routing = {
 			await Promise.all([Message.saveSystemMessage('command', rid, 'connected', user), Message.saveSystemMessage('uj', rid, '', user)]);
 		}
 
+		if (!room) {
+			logger.debug(`Cannot assign agent to inquiry ${inquiry._id}: Room not found`);
+			throw new Meteor.Error('error-room-not-found', 'Room not found');
+		}
+
 		await dispatchAgentDelegated(rid, agent.agentId);
 		logger.debug(`Agent ${agent.agentId} assigned to inquriy ${inquiry._id}. Instances notified`);
 
-		void Apps.getBridges()?.getListenerBridge().livechatEvent(AppEvents.IPostLivechatAgentAssigned, { room, user });
+		void Apps?.getBridges()?.getListenerBridge().livechatEvent(AppEvents.IPostLivechatAgentAssigned, { room, user });
 		return inquiry;
 	},
 
@@ -195,10 +182,9 @@ export const RoutingManager: Routing = {
 		const { servedBy } = room;
 
 		if (servedBy) {
-			logger.debug(`Unassigning current agent for inquiry ${inquiry._id}`);
 			await LivechatRooms.removeAgentByRoomId(rid);
 			await this.removeAllRoomSubscriptions(room);
-			await dispatchAgentDelegated(rid, null);
+			await dispatchAgentDelegated(rid);
 		}
 
 		await dispatchInquiryQueued(inquiry);
@@ -252,9 +238,8 @@ export const RoutingManager: Routing = {
 
 		if (!agent) {
 			logger.debug(`Cannot take Inquiry ${inquiry._id}: Precondition failed for agent`);
-			const cbRoom = await callbacks.run<'livechat.onAgentAssignmentFailed'>('livechat.onAgentAssignmentFailed', {
+			const cbRoom = await callbacks.run<'livechat.onAgentAssignmentFailed'>('livechat.onAgentAssignmentFailed', room, {
 				inquiry,
-				room,
 				options,
 			});
 			return cbRoom;
@@ -262,7 +247,7 @@ export const RoutingManager: Routing = {
 
 		await LivechatInquiry.takeInquiry(_id);
 		const inq = await this.assignAgent(inquiry as InquiryWithAgentInfo, agent);
-		logger.debug(`Inquiry ${inquiry._id} taken by agent ${agent.agentId}`);
+		logger.info(`Inquiry ${inquiry._id} taken by agent ${agent.agentId}`);
 
 		callbacks.runAsync('livechat.afterTakeInquiry', inq, agent);
 
@@ -286,7 +271,6 @@ export const RoutingManager: Routing = {
 	},
 
 	async delegateAgent(agent, inquiry) {
-		logger.debug(`Delegating Inquiry ${inquiry._id}`);
 		const defaultAgent = await callbacks.run('livechat.beforeDelegateAgent', agent, {
 			department: inquiry?.department,
 		});
@@ -309,7 +293,6 @@ export const RoutingManager: Routing = {
 			if (ignoreUser && ignoreUser._id === u._id) {
 				return;
 			}
-			// @ts-expect-error - File still in JS, expecting error for now on `u` types
 			void removeAgentFromSubscription(roomId, u);
 		});
 	},

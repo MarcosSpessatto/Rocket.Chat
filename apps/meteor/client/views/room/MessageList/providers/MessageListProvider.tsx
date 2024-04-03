@@ -1,5 +1,4 @@
-import type { IMessage } from '@rocket.chat/core-typings';
-import { isMessageReactionsNormalized, isThreadMainMessage } from '@rocket.chat/core-typings';
+import { isThreadMainMessage } from '@rocket.chat/core-typings';
 import { useLayout, useUser, useUserPreference, useSetting, useEndpoint, useSearchParameter } from '@rocket.chat/ui-contexts';
 import type { VFC, ReactNode } from 'react';
 import React, { useMemo, memo } from 'react';
@@ -10,21 +9,20 @@ import { MessageListContext } from '../../../../components/message/list/MessageL
 import AttachmentProvider from '../../../../providers/AttachmentProvider';
 import { useChat } from '../../contexts/ChatContext';
 import { useRoom, useRoomSubscription } from '../../contexts/RoomContext';
-import ToolboxProvider from '../../providers/ToolboxProvider';
 import { useAutoTranslate } from '../hooks/useAutoTranslate';
 import { useKatex } from '../hooks/useKatex';
 import { useLoadSurroundingMessages } from '../hooks/useLoadSurroundingMessages';
 
 type MessageListProviderProps = {
 	children: ReactNode;
-	scrollMessageList?: MessageListContextValue['scrollMessageList'];
+	messageListRef?: React.RefObject<HTMLElement>;
 	attachmentDimension?: {
 		width?: number;
 		height?: number;
 	};
 };
 
-const MessageListProvider: VFC<MessageListProviderProps> = ({ children, scrollMessageList, attachmentDimension }) => {
+const MessageListProvider: VFC<MessageListProviderProps> = ({ children, messageListRef, attachmentDimension }) => {
 	const room = useRoom();
 
 	if (!room) {
@@ -61,29 +59,6 @@ const MessageListProvider: VFC<MessageListProviderProps> = ({ children, scrollMe
 	const context: MessageListContextValue = useMemo(
 		() => ({
 			showColors,
-			useReactionsFilter: (message: IMessage): ((reaction: string) => string[]) => {
-				const { reactions } = message;
-				return !showRealName
-					? (reaction: string): string[] =>
-							reactions?.[reaction]?.usernames.filter((user) => user !== username).map((username) => `@${username}`) || []
-					: (reaction: string): string[] => {
-							if (!reactions?.[reaction]) {
-								return [];
-							}
-							if (!isMessageReactionsNormalized(message)) {
-								return message.reactions?.[reaction]?.usernames.filter((user) => user !== username).map((username) => `@${username}`) || [];
-							}
-							if (!username) {
-								return message.reactions[reaction].names;
-							}
-							const index = message.reactions[reaction].usernames.indexOf(username);
-							if (index === -1) {
-								return message.reactions[reaction].names;
-							}
-
-							return message.reactions[reaction].names.splice(index, 1);
-					  };
-			},
 			useUserHasReacted: username
 				? (message) =>
 						(reaction): boolean =>
@@ -104,7 +79,7 @@ const MessageListProvider: VFC<MessageListProviderProps> = ({ children, scrollMe
 			showRoles,
 			showRealName,
 			showUsername,
-			scrollMessageList,
+			messageListRef,
 			jumpToMessageParam: msgParameter,
 			...(katexEnabled && {
 				katex: {
@@ -127,6 +102,7 @@ const MessageListProvider: VFC<MessageListProviderProps> = ({ children, scrollMe
 							chat?.emojiPicker.open(e.currentTarget, (emoji: string) => reactToMessage({ messageId: message._id, reaction: emoji }));
 						}
 				: () => (): void => undefined,
+			username,
 		}),
 		[
 			username,
@@ -144,17 +120,15 @@ const MessageListProvider: VFC<MessageListProviderProps> = ({ children, scrollMe
 			reactToMessage,
 			showColors,
 			msgParameter,
-			scrollMessageList,
+			messageListRef,
 			chat?.emojiPicker,
 		],
 	);
 
 	return (
-		<ToolboxProvider room={room}>
-			<AttachmentProvider width={attachmentDimension?.width} height={attachmentDimension?.height}>
-				<MessageListContext.Provider value={context}>{children}</MessageListContext.Provider>
-			</AttachmentProvider>
-		</ToolboxProvider>
+		<AttachmentProvider width={attachmentDimension?.width} height={attachmentDimension?.height}>
+			<MessageListContext.Provider value={context}>{children}</MessageListContext.Provider>
+		</AttachmentProvider>
 	);
 };
 

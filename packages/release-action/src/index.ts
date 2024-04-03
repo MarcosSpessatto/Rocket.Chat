@@ -3,10 +3,11 @@ import path from 'path';
 
 import * as core from '@actions/core';
 
-import { publishRelease } from './publishRelease';
 import { bumpNextVersion } from './bumpNextVersion';
-import { startPatchRelease } from './startPatchRelease';
 import { setupGitUser } from './gitUtils';
+import { publishRelease } from './publishRelease';
+import { startPatchRelease } from './startPatchRelease';
+import { updatePRDescription } from './updatePRDescription';
 
 // const getOptionalInput = (name: string) => core.getInput(name) || undefined;
 
@@ -38,13 +39,15 @@ import { setupGitUser } from './gitUtils';
 	const mainPackagePath = path.join(cwd, 'apps', 'meteor');
 
 	if (action === 'publish-final') {
-		await publishRelease({ githubToken, exitCandidate: true, mainPackagePath });
-	} else if (action === 'publish') {
+		await publishRelease({ githubToken, mergeFinal: true, mainPackagePath });
+	} else if (action === 'cut') {
 		await publishRelease({ githubToken, baseRef, mainPackagePath });
-	} else if (action === 'bump') {
+	} else if (action === 'next') {
 		await bumpNextVersion({ githubToken, mainPackagePath });
 	} else if (action === 'patch') {
 		await startPatchRelease({ baseRef, githubToken, mainPackagePath });
+	} else if (action === 'update-pr-description') {
+		await updatePRDescription({ githubToken, mainPackagePath });
 	}
 })().catch((err) => {
 	core.error(err);

@@ -1,11 +1,11 @@
-import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
-import { ModerationReports, Rooms, Users, Messages } from '@rocket.chat/models';
+import { Apps, AppEvents } from '@rocket.chat/apps';
 import type { IMessage } from '@rocket.chat/core-typings';
+import { ModerationReports, Rooms, Users, Messages } from '@rocket.chat/models';
 import type { ServerMethods } from '@rocket.chat/ui-contexts';
+import { check } from 'meteor/check';
+import { Meteor } from 'meteor/meteor';
 
 import { canAccessRoomAsync } from '../../app/authorization/server/functions/canAccessRoom';
-import { AppEvents, Apps } from '../../ee/server/apps';
 import { methodDeprecationLogger } from '../../app/lib/server/lib/deprecationWarningLogger';
 
 declare module '@rocket.chat/ui-contexts' {
@@ -77,7 +77,7 @@ Meteor.methods<ServerMethods>({
 
 		await ModerationReports.createWithMessageDescriptionAndUserId(message, description, roomInfo, reportedBy);
 
-		await Apps.triggerEvent(AppEvents.IPostMessageReported, message, await Meteor.userAsync(), description);
+		await Apps?.triggerEvent(AppEvents.IPostMessageReported, message, await Meteor.userAsync(), description);
 
 		return true;
 	},

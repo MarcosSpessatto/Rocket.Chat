@@ -1,6 +1,3 @@
-import { Meteor } from 'meteor/meteor';
-import { Random } from '@rocket.chat/random';
-import { EmojiCustom, LivechatTrigger, LivechatVisitors, LivechatRooms, LivechatDepartment } from '@rocket.chat/models';
 import type {
 	ILivechatAgent,
 	ILivechatDepartment,
@@ -9,12 +6,15 @@ import type {
 	IOmnichannelRoom,
 	SelectedAgent,
 } from '@rocket.chat/core-typings';
+import { License } from '@rocket.chat/license';
+import { EmojiCustom, LivechatTrigger, LivechatVisitors, LivechatRooms, LivechatDepartment } from '@rocket.chat/models';
+import { Random } from '@rocket.chat/random';
+import { Meteor } from 'meteor/meteor';
 
-import { Livechat } from '../../lib/Livechat';
-import { Livechat as LivechatTyped } from '../../lib/LivechatTyped';
 import { callbacks } from '../../../../../lib/callbacks';
-import { normalizeAgent } from '../../lib/Helper';
 import { i18n } from '../../../../../server/lib/i18n';
+import { normalizeAgent } from '../../lib/Helper';
+import { Livechat as LivechatTyped } from '../../lib/LivechatTyped';
 
 export function online(department: string, skipSettingCheck = false, skipFallbackCheck = false): Promise<boolean> {
 	return LivechatTyped.online(department, skipSettingCheck, skipFallbackCheck);
@@ -22,12 +22,17 @@ export function online(department: string, skipSettingCheck = false, skipFallbac
 
 async function findTriggers(): Promise<Pick<ILivechatTrigger, '_id' | 'actions' | 'conditions' | 'runOnce'>[]> {
 	const triggers = await LivechatTrigger.findEnabled().toArray();
-	return triggers.map(({ _id, actions, conditions, runOnce }) => ({
-		_id,
-		actions,
-		conditions,
-		runOnce,
-	}));
+	const hasLicense = License.hasModule('livechat-enterprise');
+	const premiumActions = ['use-external-service'];
+
+	return triggers
+		.filter(({ actions }) => hasLicense || actions.some((c) => !premiumActions.includes(c.name)))
+		.map(({ _id, actions, conditions, runOnce }) => ({
+			_id,
+			actions,
+			conditions,
+			runOnce,
+		}));
 }
 
 async function findDepartments(
@@ -59,6 +64,7 @@ export function findGuest(token: string): Promise<ILivechatVisitor | null> {
 			token: 1,
 			visitorEmails: 1,
 			department: 1,
+			activity: 1,
 		},
 	});
 }
@@ -126,7 +132,7 @@ export function getRoom({
 	return LivechatTyped.getRoom(guest, message, roomInfo, agent, extraParams);
 }
 
-export async function findAgent(agentId?: string): Promise<void | { hiddenInfo: true } | ILivechatAgent> {
+export async function findAgent(agentId?: string): Promise<void | { hiddenInfo: boolean } | ILivechatAgent> {
 	return normalizeAgent(agentId);
 }
 
@@ -139,7 +145,7 @@ export function normalizeHttpHeaderData(headers: Record<string, string | string[
 
 export async function settings({ businessUnit = '' }: { businessUnit?: string } = {}): Promise<Record<string, string | number | any>> {
 	// Putting this ugly conversion while we type the livechat service
-	const initSettings = (await Livechat.getInitSettings()) as unknown as Record<string, string | number | any>;
+	const initSettings = await LivechatTyped.getInitSettings();
 	const triggers = await findTriggers();
 	const departments = await findDepartments(businessUnit);
 	const sound = `${Meteor.absoluteUrl()}sounds/chime.mp3`;
@@ -164,12 +170,17 @@ export async function settings({ businessUnit = '' }: { businessUnit?: string } 
 			limitTextLength:
 				initSettings.Livechat_enable_message_character_limit &&
 				(initSettings.Livechat_message_character_limit || initSettings.Message_MaxAllowedSize),
+			hiddenSystemMessages: initSettings.Livechat_hide_system_messages,
+			livechatLogo: initSettings.Assets_livechat_widget_logo,
+			hideWatermark: initSettings.Livechat_hide_watermark || false,
 		},
 		theme: {
 			title: initSettings.Livechat_title,
 			color: initSettings.Livechat_title_color,
 			offlineTitle: initSettings.Livechat_offline_title,
 			offlineColor: initSettings.Livechat_offline_title_color,
+			position: initSettings.Livechat_widget_position || 'right',
+			background: initSettings.Livechat_background,
 			actionLinks: {
 				webrtc: [
 					{

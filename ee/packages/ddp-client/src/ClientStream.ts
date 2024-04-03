@@ -1,17 +1,22 @@
 import { Emitter } from '@rocket.chat/emitter';
 
-import type { DDPClient } from './types/DDPClient';
-import type { PublicationPayloads } from './types/publicationPayloads';
-import type { DDPDispatchOptions } from './MinimalDDPClient';
 import { DDPDispatcher } from './DDPDispatcher';
-import type { MethodPayload } from './types/methodsPayloads';
-import type { Subscription } from './types/Subscription';
+import type { DDPDispatchOptions } from './MinimalDDPClient';
 import type { ClientStream } from './types/ClientStream';
+import type { DDPClient } from './types/DDPClient';
+import type { Subscription } from './types/Subscription';
+import type { MethodPayload } from './types/methodsPayloads';
+import type { PublicationPayloads } from './types/publicationPayloads';
 
 export class ClientStreamImpl extends Emitter implements ClientStream {
 	subscriptions = new Map<string, Subscription>();
 
 	constructor(private ddp: DDPClient, readonly dispatcher: DDPDispatcher = new DDPDispatcher()) {
+		ddp.onConnection(({ msg }) => {
+			if (msg === 'connected') {
+				this.emit('connected');
+			}
+		});
 		super();
 	}
 

@@ -1,14 +1,14 @@
-import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
-import { Accounts } from 'meteor/accounts-base';
+import { Apps, AppEvents } from '@rocket.chat/apps';
+import { Users } from '@rocket.chat/models';
 import { SHA256 } from '@rocket.chat/sha256';
 import type { ServerMethods } from '@rocket.chat/ui-contexts';
-import { Users } from '@rocket.chat/models';
+import { Accounts } from 'meteor/accounts-base';
+import { check } from 'meteor/check';
+import { Meteor } from 'meteor/meteor';
 
+import { trim } from '../../../../lib/utils/stringUtils';
 import { settings } from '../../../settings/server';
 import { deleteUser } from '../functions/deleteUser';
-import { AppEvents, Apps } from '../../../../ee/server/apps/orchestrator';
-import { trim } from '../../../../lib/utils/stringUtils';
 
 declare module '@rocket.chat/ui-contexts' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -66,7 +66,7 @@ Meteor.methods<ServerMethods>({
 		await deleteUser(uid, confirmRelinquish);
 
 		// App IPostUserDeleted event hook
-		await Apps.triggerEvent(AppEvents.IPostUserDeleted, { user });
+		await Apps?.triggerEvent(AppEvents.IPostUserDeleted, { user });
 
 		return true;
 	},

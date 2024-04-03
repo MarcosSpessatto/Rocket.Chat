@@ -21,8 +21,8 @@ const EmojiElement = ({ emoji, image, onClick, small = false, ...props }: EmojiE
 	const emojiSmallClass = css`
 		> .emoji,
 		.emojione {
-			width: 18px;
-			height: 18px;
+			width: 1.125rem;
+			height: 1.125rem;
 		}
 	`;
 
@@ -30,7 +30,6 @@ const EmojiElement = ({ emoji, image, onClick, small = false, ...props }: EmojiE
 
 	return (
 		<IconButton
-			{...props}
 			{...(small && { className: emojiSmallClass })}
 			small={small}
 			medium={!small}
@@ -40,6 +39,7 @@ const EmojiElement = ({ emoji, image, onClick, small = false, ...props }: EmojiE
 			data-emoji={emoji}
 			aria-label={emoji}
 			icon={emojiElement}
+			{...props}
 		/>
 	);
 };

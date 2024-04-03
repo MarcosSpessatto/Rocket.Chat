@@ -1,6 +1,6 @@
-import { Meteor } from 'meteor/meteor';
-import type { ServerMethods } from '@rocket.chat/ui-contexts';
 import { Users } from '@rocket.chat/models';
+import type { ServerMethods } from '@rocket.chat/ui-contexts';
+import { Meteor } from 'meteor/meteor';
 
 import { TOTP } from '../lib/totp';
 
@@ -33,12 +33,24 @@ Meteor.methods<ServerMethods>({
 			secret: user.services.totp.tempSecret,
 			token: userToken,
 		});
-
-		if (verified) {
-			const { codes, hashedCodes } = TOTP.generateCodes();
-
-			await Users.enable2FAAndSetSecretAndCodesByUserId(userId, user.services.totp.tempSecret, hashedCodes);
-			return { codes };
+		if (!verified) {
+			throw new Meteor.Error('invalid-totp');
 		}
+
+		const { codes, hashedCodes } = TOTP.generateCodes();
+
+		await Users.enable2FAAndSetSecretAndCodesByUserId(userId, user.services.totp.tempSecret, hashedCodes);
+
+		// Once the TOTP is validated we logout all other clients
+		const { 'x-auth-token': xAuthToken } = this.connection?.httpHeaders ?? {};
+		if (xAuthToken) {
+			const hashedToken = Accounts._hashLoginToken(xAuthToken);
+
+			if (!(await Users.removeNonPATLoginTokensExcept(this.userId, hashedToken))) {
+				throw new Meteor.Error('error-logging-out-other-clients', 'Error logging out other clients');
+			}
+		}
+
+		return { codes };
 	},
 });

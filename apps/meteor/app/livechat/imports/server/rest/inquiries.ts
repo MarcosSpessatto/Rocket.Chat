@@ -1,3 +1,5 @@
+import { LivechatInquiryStatus } from '@rocket.chat/core-typings';
+import { LivechatInquiry, LivechatDepartment, Users } from '@rocket.chat/models';
 import {
 	isGETLivechatInquiriesListParams,
 	isPOSTLivechatInquiriesTakeParams,
@@ -5,12 +7,10 @@ import {
 	isGETLivechatInquiriesQueuedForUserParams,
 	isGETLivechatInquiriesGetOneParams,
 } from '@rocket.chat/rest-typings';
-import { LivechatInquiryStatus } from '@rocket.chat/core-typings';
-import { LivechatInquiry, LivechatDepartment, Users } from '@rocket.chat/models';
 
 import { API } from '../../../../api/server';
-import { findInquiries, findOneInquiryByRoomId } from '../../../server/api/lib/inquiries';
 import { getPaginationItems } from '../../../../api/server/helpers/getPaginationItems';
+import { findInquiries, findOneInquiryByRoomId } from '../../../server/api/lib/inquiries';
 import { takeInquiry } from '../../../server/methods/takeInquiry';
 
 API.v1.addRoute(
@@ -23,7 +23,7 @@ API.v1.addRoute(
 			const { department } = this.queryParams;
 			const ourQuery: { status: string; department?: string } = { status: 'queued' };
 			if (department) {
-				const departmentFromDB = await LivechatDepartment.findOneByIdOrName(department);
+				const departmentFromDB = await LivechatDepartment.findOneByIdOrName(department, { projection: { _id: 1 } });
 				if (departmentFromDB) {
 					ourQuery.department = departmentFromDB._id;
 				}

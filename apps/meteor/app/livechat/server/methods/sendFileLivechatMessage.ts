@@ -1,15 +1,15 @@
-import { Meteor } from 'meteor/meteor';
-import { Match, check } from 'meteor/check';
-import { Random } from '@rocket.chat/random';
-import { LivechatVisitors, LivechatRooms } from '@rocket.chat/models';
-import type { ServerMethods } from '@rocket.chat/ui-contexts';
 import type {
-	MessageAttachment,
+	FileAttachmentProps,
 	ImageAttachmentProps,
 	AudioAttachmentProps,
 	VideoAttachmentProps,
 	IUpload,
 } from '@rocket.chat/core-typings';
+import { LivechatVisitors, LivechatRooms } from '@rocket.chat/models';
+import { Random } from '@rocket.chat/random';
+import type { ServerMethods } from '@rocket.chat/ui-contexts';
+import { Match, check } from 'meteor/check';
+import { Meteor } from 'meteor/meteor';
 
 import { FileUpload } from '../../../file-upload/server';
 import { sendMessageLivechat } from './sendMessageLivechat';
@@ -56,7 +56,7 @@ export const sendFileLivechatMessage = async ({ roomId, visitorToken, file, msgD
 
 	const fileUrl = file.name && FileUpload.getPath(`${file._id}/${encodeURI(file.name)}`);
 
-	const attachment: MessageAttachment = {
+	const attachment: Partial<FileAttachmentProps> = {
 		title: file.name,
 		type: 'file',
 		description: file.description,

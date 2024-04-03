@@ -1,12 +1,12 @@
-import { UploadBridge } from '@rocket.chat/apps-engine/server/bridges/UploadBridge';
+import type { IAppServerOrchestrator } from '@rocket.chat/apps';
 import type { IUpload } from '@rocket.chat/apps-engine/definition/uploads';
 import type { IUploadDetails } from '@rocket.chat/apps-engine/definition/uploads/IUploadDetails';
+import { UploadBridge } from '@rocket.chat/apps-engine/server/bridges/UploadBridge';
 
-import { FileUpload } from '../../../file-upload/server';
 import { determineFileType } from '../../../../ee/lib/misc/determineFileType';
-import type { AppServerOrchestrator } from '../../../../ee/server/apps/orchestrator';
-import { sendFileLivechatMessage } from '../../../livechat/server/methods/sendFileLivechatMessage';
+import { FileUpload } from '../../../file-upload/server';
 import { sendFileMessage } from '../../../file-upload/server/methods/sendFileMessage';
+import { sendFileLivechatMessage } from '../../../livechat/server/methods/sendFileLivechatMessage';
 
 const getUploadDetails = (details: IUploadDetails): Partial<IUploadDetails> => {
 	if (details.visitorToken) {
@@ -16,15 +16,16 @@ const getUploadDetails = (details: IUploadDetails): Partial<IUploadDetails> => {
 	return details;
 };
 export class AppUploadBridge extends UploadBridge {
-	// eslint-disable-next-line no-empty-function
-	constructor(private readonly orch: AppServerOrchestrator) {
+	constructor(private readonly orch: IAppServerOrchestrator) {
 		super();
 	}
 
 	protected async getById(id: string, appId: string): Promise<IUpload> {
 		this.orch.debugLog(`The App ${appId} is getting the upload: "${id}"`);
 
-		return this.orch.getConverters()?.get('uploads').convertById(id);
+		// #TODO: #AppsEngineTypes - Remove explicit types and typecasts once the apps-engine definition/implementation mismatch is fixed.
+		const promise: Promise<IUpload | undefined> = this.orch.getConverters()?.get('uploads').convertById(id);
+		return promise as Promise<IUpload>;
 	}
 
 	protected async getBuffer(upload: IUpload, appId: string): Promise<Buffer> {

@@ -1,33 +1,35 @@
-import { Random } from '@rocket.chat/random';
-import { UserBridge } from '@rocket.chat/apps-engine/server/bridges/UserBridge';
+import type { IAppServerOrchestrator } from '@rocket.chat/apps';
 import type { IUserCreationOptions, IUser, UserType } from '@rocket.chat/apps-engine/definition/users';
-import { Subscriptions, Users } from '@rocket.chat/models';
+import { UserBridge } from '@rocket.chat/apps-engine/server/bridges/UserBridge';
 import { Presence } from '@rocket.chat/core-services';
 import type { UserStatus } from '@rocket.chat/core-typings';
+import { Subscriptions, Users } from '@rocket.chat/models';
+import { Random } from '@rocket.chat/random';
 
+import { checkUsernameAvailability } from '../../../lib/server/functions/checkUsernameAvailability';
 import { deleteUser } from '../../../lib/server/functions/deleteUser';
 import { getUserCreatedByApp } from '../../../lib/server/functions/getUserCreatedByApp';
-import { setUserAvatar } from '../../../lib/server/functions/setUserAvatar';
-import { checkUsernameAvailability } from '../../../lib/server/functions/checkUsernameAvailability';
-import type { AppServerOrchestrator } from '../../../../ee/server/apps/orchestrator';
 import { setUserActiveStatus } from '../../../lib/server/functions/setUserActiveStatus';
+import { setUserAvatar } from '../../../lib/server/functions/setUserAvatar';
 
 export class AppUserBridge extends UserBridge {
-	// eslint-disable-next-line no-empty-function
-	constructor(private readonly orch: AppServerOrchestrator) {
+	constructor(private readonly orch: IAppServerOrchestrator) {
 		super();
 	}
 
 	protected async getById(userId: string, appId: string): Promise<IUser> {
 		this.orch.debugLog(`The App ${appId} is getting the userId: "${userId}"`);
-
-		return this.orch.getConverters()?.get('users').convertById(userId);
+		// #TODO: #AppsEngineTypes - Remove explicit types and typecasts once the apps-engine definition/implementation mismatch is fixed.
+		const promise: Promise<IUser | undefined> = this.orch.getConverters()?.get('users').convertById(userId);
+		return promise as Promise<IUser>;
 	}
 
 	protected async getByUsername(username: string, appId: string): Promise<IUser> {
 		this.orch.debugLog(`The App ${appId} is getting the username: "${username}"`);
 
-		return this.orch.getConverters()?.get('users').convertByUsername(username);
+		// #TODO: #AppsEngineTypes - Remove explicit types and typecasts once the apps-engine definition/implementation mismatch is fixed.
+		const promise: Promise<IUser | undefined> = this.orch.getConverters()?.get('users').convertByUsername(username);
+		return promise as Promise<IUser>;
 	}
 
 	protected async getAppUser(appId?: string): Promise<IUser | undefined> {
@@ -62,7 +64,11 @@ export class AppUserBridge extends UserBridge {
 
 	protected async create(userDescriptor: Partial<IUser>, appId: string, options?: IUserCreationOptions): Promise<string> {
 		this.orch.debugLog(`The App ${appId} is requesting to create a new user.`);
-		const user = this.orch.getConverters()?.get('users').convertToRocketChat(userDescriptor);
+		// #TODO: #AppsEngineTypes - Remove explicit types and typecasts once the apps-engine definition/implementation mismatch is fixed.
+		const user = this.orch
+			.getConverters()
+			?.get('users')
+			.convertToRocketChat(userDescriptor as IUser);
 
 		if (!user._id) {
 			user._id = Random.id();
@@ -75,7 +81,7 @@ export class AppUserBridge extends UserBridge {
 		switch (user.type) {
 			case 'bot':
 			case 'app':
-				if (!(await checkUsernameAvailability(user.username))) {
+				if (!(await checkUsernameAvailability(user.username as string))) {
 					throw new Error(`The username "${user.username}" is already being used. Rename or remove the user using it to install this App`);
 				}
 
@@ -140,9 +146,12 @@ export class AppUserBridge extends UserBridge {
 		if (!userId) {
 			throw new Error('Invalid user id');
 		}
-		const convertedUser = await this.orch.getConverters()?.get('users').convertById(userId);
 
-		await setUserActiveStatus(convertedUser.id, false, confirmRelinquish);
+		// #TODO: #AppsEngineTypes - Remove explicit types and typecasts once the apps-engine definition/implementation mismatch is fixed.
+		const convertedUser: IUser | undefined = await this.orch.getConverters()?.get('users').convertById(userId);
+		const { id: uid } = convertedUser as IUser;
+
+		await setUserActiveStatus(uid, false, confirmRelinquish);
 
 		return true;
 	}

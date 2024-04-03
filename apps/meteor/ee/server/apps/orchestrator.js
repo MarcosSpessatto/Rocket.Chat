@@ -1,13 +1,11 @@
+import { registerOrchestrator } from '@rocket.chat/apps';
 import { EssentialAppDisabledException } from '@rocket.chat/apps-engine/definition/exceptions';
-import { AppInterface } from '@rocket.chat/apps-engine/definition/metadata';
 import { AppManager } from '@rocket.chat/apps-engine/server/AppManager';
-import { Meteor } from 'meteor/meteor';
+import { Logger } from '@rocket.chat/logger';
 import { AppLogs, Apps as AppsModel, AppsPersistence } from '@rocket.chat/models';
+import { Meteor } from 'meteor/meteor';
 
-import { Logger } from '../../../server/lib/logger/Logger';
-import { settings, settingsRegistry } from '../../../app/settings/server';
 import { RealAppBridges } from '../../../app/apps/server/bridges';
-import { AppServerNotifier, AppsRestApi, AppUIKitInteractionApi } from './communication';
 import {
 	AppMessagesConverter,
 	AppRoomsConverter,
@@ -17,14 +15,19 @@ import {
 	AppDepartmentsConverter,
 	AppUploadsConverter,
 	AppVisitorsConverter,
+	AppRolesConverter,
 } from '../../../app/apps/server/converters';
-import { AppRealLogsStorage, AppRealStorage, ConfigurableAppSourceStorage } from './storage';
-import { canEnableApp } from '../../app/license/server/license';
 import { AppThreadsConverter } from '../../../app/apps/server/converters/threads';
+import { settings } from '../../../app/settings/server';
+import { canEnableApp } from '../../app/license/server/canEnableApp';
+import { AppServerNotifier, AppsRestApi, AppUIKitInteractionApi } from './communication';
+import { AppRealLogsStorage, AppRealStorage, ConfigurableAppSourceStorage } from './storage';
 
 function isTesting() {
 	return process.env.TEST_MODE === 'true';
 }
+
+const DISABLED_PRIVATE_APP_INSTALLATION = ['yes', 'true'].includes(String(process.env.DISABLE_PRIVATE_APP_INSTALLATION).toLowerCase());
 
 let appsSourceStorageType;
 let appsSourceStorageFilesystemPath;
@@ -64,6 +67,7 @@ export class AppServerOrchestrator {
 		this._converters.set('uploads', new AppUploadsConverter(this));
 		this._converters.set('videoConferences', new AppVideoConferencesConverter());
 		this._converters.set('threads', new AppThreadsConverter(this));
+		this._converters.set('roles', new AppRolesConverter(this));
 
 		this._bridges = new RealAppBridges(this);
 
@@ -135,6 +139,10 @@ export class AppServerOrchestrator {
 
 	isDebugging() {
 		return !isTesting();
+	}
+
+	shouldDisablePrivateAppInstallation() {
+		return DISABLED_PRIVATE_APP_INSTALLATION;
 	}
 
 	/**
@@ -241,60 +249,8 @@ export class AppServerOrchestrator {
 	}
 }
 
-export const AppEvents = AppInterface;
 export const Apps = new AppServerOrchestrator();
-
-void settingsRegistry.addGroup('General', async function () {
-	await this.section('Apps', async function () {
-		await this.add('Apps_Logs_TTL', '30_days', {
-			type: 'select',
-			values: [
-				{
-					key: '7_days',
-					i18nLabel: 'Apps_Logs_TTL_7days',
-				},
-				{
-					key: '14_days',
-					i18nLabel: 'Apps_Logs_TTL_14days',
-				},
-				{
-					key: '30_days',
-					i18nLabel: 'Apps_Logs_TTL_30days',
-				},
-			],
-			public: true,
-			hidden: false,
-			alert: 'Apps_Logs_TTL_Alert',
-		});
-
-		await this.add('Apps_Framework_Source_Package_Storage_Type', 'gridfs', {
-			type: 'select',
-			values: [
-				{
-					key: 'gridfs',
-					i18nLabel: 'GridFS',
-				},
-				{
-					key: 'filesystem',
-					i18nLabel: 'FileSystem',
-				},
-			],
-			public: true,
-			hidden: false,
-			alert: 'Apps_Framework_Source_Package_Storage_Type_Alert',
-		});
-
-		await this.add('Apps_Framework_Source_Package_Storage_FileSystem_Path', '', {
-			type: 'string',
-			public: true,
-			enableQuery: {
-				_id: 'Apps_Framework_Source_Package_Storage_Type',
-				value: 'filesystem',
-			},
-			alert: 'Apps_Framework_Source_Package_Storage_FileSystem_Alert',
-		});
-	});
-});
+registerOrchestrator(Apps);
 
 settings.watch('Apps_Framework_Source_Package_Storage_Type', (value) => {
 	if (!Apps.isInitialized()) {
@@ -310,32 +266,4 @@ settings.watch('Apps_Framework_Source_Package_Storage_FileSystem_Path', (value) 
 	} else {
 		Apps.getAppSourceStorage().setFileSystemStoragePath(value);
 	}
-});
-
-settings.watch('Apps_Logs_TTL', async (value) => {
-	if (!Apps.isInitialized()) {
-		return;
-	}
-
-	let expireAfterSeconds = 0;
-
-	switch (value) {
-		case '7_days':
-			expireAfterSeconds = 604800;
-			break;
-		case '14_days':
-			expireAfterSeconds = 1209600;
-			break;
-		case '30_days':
-			expireAfterSeconds = 2592000;
-			break;
-	}
-
-	if (!expireAfterSeconds) {
-		return;
-	}
-
-	const model = Apps._logModel;
-
-	await model.resetTTLIndex(expireAfterSeconds);
 });

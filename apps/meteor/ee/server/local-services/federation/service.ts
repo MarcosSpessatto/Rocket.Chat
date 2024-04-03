@@ -1,16 +1,16 @@
-import type { FederationPaginatedResult, IFederationPublicRooms } from '@rocket.chat/rest-typings';
 import type { IFederationServiceEE, IFederationJoinExternalPublicRoomInput } from '@rocket.chat/core-services';
+import type { FederationPaginatedResult, IFederationPublicRooms } from '@rocket.chat/rest-typings';
 
 import { AbstractFederationService } from '../../../../server/services/federation/service';
 import type { FederationUserServiceEE } from './application/UserService';
-import { FederationSearchPublicRoomsInputDto } from './application/room/sender/input/RoomInputDto';
-import type { RocketChatRoomAdapterEE } from './infrastructure/rocket-chat/adapters/Room';
-import type { RocketChatUserAdapterEE } from './infrastructure/rocket-chat/adapters/User';
-import { FederationFactoryEE } from './infrastructure/Factory';
-import type { IFederationBridgeEE } from './domain/IFederationBridge';
-import { FederationRoomSenderConverterEE } from './infrastructure/rocket-chat/converters/RoomSender';
 import type { FederationDirectMessageRoomServiceSender } from './application/room/sender/DirectMessageRoomServiceSender';
 import type { FederationRoomServiceSender } from './application/room/sender/RoomServiceSender';
+import { FederationSearchPublicRoomsInputDto } from './application/room/sender/input/RoomInputDto';
+import type { IFederationBridgeEE } from './domain/IFederationBridge';
+import { FederationFactoryEE } from './infrastructure/Factory';
+import type { RocketChatRoomAdapterEE } from './infrastructure/rocket-chat/adapters/Room';
+import type { RocketChatUserAdapterEE } from './infrastructure/rocket-chat/adapters/User';
+import { FederationRoomSenderConverterEE } from './infrastructure/rocket-chat/converters/RoomSender';
 
 abstract class AbstractBaseFederationServiceEE extends AbstractFederationService {
 	protected internalUserServiceEE: FederationUserServiceEE;
@@ -198,9 +198,21 @@ export class FederationServiceEE extends AbstractBaseFederationServiceEE impleme
 		);
 	}
 
+	public async verifyMatrixIds(matrixIds: string[]): Promise<Map<string, string>> {
+		return super.verifyMatrixIds(matrixIds);
+	}
+
 	static async createFederationService(): Promise<FederationServiceEE> {
 		const federationService = new FederationServiceEE();
 		await federationService.initialize();
 		return federationService;
+	}
+
+	async created(): Promise<void> {
+		return super.created();
+	}
+
+	async stopped(): Promise<void> {
+		return super.stopped();
 	}
 }

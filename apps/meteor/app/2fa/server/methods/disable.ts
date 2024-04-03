@@ -1,6 +1,6 @@
+import { Users } from '@rocket.chat/models';
 import type { ServerMethods } from '@rocket.chat/ui-contexts';
 import { Meteor } from 'meteor/meteor';
-import { Users } from '@rocket.chat/models';
 
 import { TOTP } from '../lib/totp';
 
@@ -24,6 +24,10 @@ Meteor.methods<ServerMethods>({
 			throw new Meteor.Error('error-invalid-user', 'Invalid user', {
 				method: '2fa:disable',
 			});
+		}
+
+		if (!user.services?.totp) {
+			return false;
 		}
 
 		const verified = await TOTP.verify({

@@ -1,6 +1,7 @@
 import type { IRole, IUser } from '@rocket.chat/core-typings';
 import { Box } from '@rocket.chat/fuselage';
 import { capitalize } from '@rocket.chat/string-helpers';
+import { UserAvatar } from '@rocket.chat/ui-avatar';
 import type { TranslationKey } from '@rocket.chat/ui-contexts';
 import { useTranslation } from '@rocket.chat/ui-contexts';
 import type { ReactElement } from 'react';
@@ -8,7 +9,6 @@ import React from 'react';
 
 import { Roles } from '../../../../../app/models/client';
 import { GenericTableRow, GenericTableCell } from '../../../../components/GenericTable';
-import UserAvatar from '../../../../components/avatar/UserAvatar';
 
 type UsersTableRowProps = {
 	user: Pick<IUser, '_id' | 'username' | 'name' | 'status' | 'roles' | 'emails' | 'active' | 'avatarETag'>;
@@ -38,7 +38,7 @@ const UsersTableRow = ({ user, onClick, mediaQuery }: UsersTableRowProps): React
 			<GenericTableCell withTruncatedText>
 				<Box display='flex' alignItems='center'>
 					{username && <UserAvatar size={mediaQuery ? 'x28' : 'x40'} username={username} etag={avatarETag} />}
-					<Box display='flex' mi='x8' withTruncatedText>
+					<Box display='flex' mi={8} withTruncatedText>
 						<Box display='flex' flexDirection='column' alignSelf='center' withTruncatedText>
 							<Box fontScale='p2m' color='default' withTruncatedText>
 								{name || username}
@@ -58,7 +58,7 @@ const UsersTableRow = ({ user, onClick, mediaQuery }: UsersTableRowProps): React
 					<Box fontScale='p2m' color='hint' withTruncatedText>
 						{username}
 					</Box>{' '}
-					<Box mi='x4' />
+					<Box mi={4} />
 				</GenericTableCell>
 			)}
 			<GenericTableCell withTruncatedText>{emails?.length && emails[0].address}</GenericTableCell>

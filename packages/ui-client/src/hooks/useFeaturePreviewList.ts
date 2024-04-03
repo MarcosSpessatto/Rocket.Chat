@@ -1,7 +1,7 @@
 import type { TranslationKey } from '@rocket.chat/ui-contexts';
 import { useUserPreference, useSetting } from '@rocket.chat/ui-contexts';
 
-export type FeaturesAvailable = 'quickReactions' | 'navigationBar';
+export type FeaturesAvailable = 'quickReactions' | 'navigationBar' | 'enable-timestamp-message-parser';
 
 export type FeaturePreviewProps = {
 	name: FeaturesAvailable;
@@ -10,6 +10,7 @@ export type FeaturePreviewProps = {
 	group: 'Message' | 'Navigation';
 	imageUrl?: string;
 	value: boolean;
+	enabled: boolean;
 };
 
 export const defaultFeaturesPreview: FeaturePreviewProps[] = [
@@ -20,6 +21,7 @@ export const defaultFeaturesPreview: FeaturePreviewProps[] = [
 		group: 'Message',
 		imageUrl: 'images/featurePreview/quick-reactions.png',
 		value: false,
+		enabled: true,
 	},
 	{
 		name: 'navigationBar',
@@ -27,8 +29,19 @@ export const defaultFeaturesPreview: FeaturePreviewProps[] = [
 		description: 'Navigation_bar_description',
 		group: 'Navigation',
 		value: false,
+		enabled: false,
+	},
+	{
+		name: 'enable-timestamp-message-parser',
+		i18n: 'Enable_timestamp',
+		description: 'Enable_timestamp_description',
+		group: 'Message',
+		value: false,
+		enabled: true,
 	},
 ];
+
+export const enabledDefaultFeatures = defaultFeaturesPreview.filter((feature) => feature.enabled);
 
 export const useFeaturePreviewList = () => {
 	const featurePreviewEnabled = useSetting<boolean>('Accounts_AllowFeaturePreview');
@@ -38,11 +51,11 @@ export const useFeaturePreviewList = () => {
 		return { unseenFeatures: 0, features: [] as FeaturePreviewProps[], featurePreviewEnabled };
 	}
 
-	const unseenFeatures = defaultFeaturesPreview.filter(
+	const unseenFeatures = enabledDefaultFeatures.filter(
 		(feature) => !userFeaturesPreview?.find((userFeature) => userFeature.name === feature.name),
 	).length;
 
-	const mergedFeatures = defaultFeaturesPreview.map((feature) => {
+	const mergedFeatures = enabledDefaultFeatures.map((feature) => {
 		const userFeature = userFeaturesPreview?.find((userFeature) => userFeature.name === feature.name);
 		return { ...feature, ...userFeature };
 	});

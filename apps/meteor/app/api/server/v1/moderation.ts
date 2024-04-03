@@ -1,17 +1,18 @@
+import type { IModerationReport, IUser, IUserEmail } from '@rocket.chat/core-typings';
+import { ModerationReports, Users } from '@rocket.chat/models';
 import {
 	isReportHistoryProps,
 	isArchiveReportProps,
 	isReportInfoParams,
-	isReportMessageHistoryParams,
+	isGetUserReportsParams,
+	isModerationReportUserPost,
 	isModerationDeleteMsgHistoryParams,
 	isReportsByMsgIdParams,
 } from '@rocket.chat/rest-typings';
-import { ModerationReports, Users } from '@rocket.chat/models';
-import type { IModerationReport } from '@rocket.chat/core-typings';
 import { escapeRegExp } from '@rocket.chat/string-helpers';
 
-import { API } from '../api';
 import { deleteReportedMessages } from '../../../../server/lib/moderation/deleteReportedMessages';
+import { API } from '../api';
 import { getPaginationItems } from '../helpers/getPaginationItems';
 
 type ReportMessage = Pick<IModerationReport, '_id' | 'message' | 'ts' | 'room'>;
@@ -35,7 +36,11 @@ API.v1.addRoute(
 
 			const escapedSelector = escapeRegExp(selector);
 
-			const reports = await ModerationReports.findReportsGroupedByUser(latest, oldest, escapedSelector, { offset, count, sort }).toArray();
+			const reports = await ModerationReports.findMessageReportsGroupedByUser(latest, oldest, escapedSelector, {
+				offset,
+				count,
+				sort,
+			}).toArray();
 
 			if (reports.length === 0) {
 				return API.v1.success({
@@ -46,7 +51,7 @@ API.v1.addRoute(
 				});
 			}
 
-			const total = await ModerationReports.countReportsInRange(latest, oldest, escapedSelector);
+			const total = await ModerationReports.getTotalUniqueReportedUsers(latest, oldest, escapedSelector, true);
 
 			return API.v1.success({
 				reports,
@@ -59,10 +64,59 @@ API.v1.addRoute(
 );
 
 API.v1.addRoute(
+	'moderation.userReports',
+	{
+		authRequired: true,
+		validateParams: isReportHistoryProps,
+		permissionsRequired: ['view-moderation-console'],
+	},
+	{
+		async get() {
+			const { latest: _latest, oldest: _oldest, selector = '' } = this.queryParams;
+
+			const { count = 20, offset = 0 } = await getPaginationItems(this.queryParams);
+
+			const { sort } = await this.parseJsonQuery();
+
+			const latest = _latest ? new Date(_latest) : new Date();
+
+			const oldest = _oldest ? new Date(_oldest) : new Date(0);
+
+			const escapedSelector = escapeRegExp(selector);
+
+			const reports = await ModerationReports.findUserReports(latest, oldest, escapedSelector, {
+				offset,
+				count,
+				sort,
+			}).toArray();
+
+			if (reports.length === 0) {
+				return API.v1.success({
+					reports,
+					count: 0,
+					offset,
+					total: 0,
+				});
+			}
+
+			const total = await ModerationReports.getTotalUniqueReportedUsers(latest, oldest, escapedSelector);
+
+			const result = {
+				reports,
+				count: reports.length,
+				offset,
+				total,
+			};
+			return API.v1.success(result);
+		},
+	},
+);
+
+API.v1.addRoute(
 	'moderation.user.reportedMessages',
 	{
 		authRequired: true,
-		validateParams: isReportMessageHistoryParams,
+		validateParams: isGetUserReportsParams,
 		permissionsRequired: ['view-moderation-console'],
 	},
 	{
@@ -73,10 +127,9 @@ API.v1.addRoute(
 
 			const { count = 50, offset = 0 } = await getPaginationItems(this.queryParams);
 
-			const user = await Users.findOneById(userId, { projection: { _id: 1 } });
-			if (!user) {
-				return API.v1.failure('error-invalid-user');
-			}
+			const user = await Users.findOneById<Pick<IUser, '_id' | 'username' | 'name'>>(userId, {
+				projection: { _id: 1, username: 1, name: 1 },
+			});
 
 			const escapedSelector = escapeRegExp(selector);
 
@@ -99,7 +152,66 @@ API.v1.addRoute(
 			}
 
 			return API.v1.success({
+				user,
 				messages: uniqueMessages,
+				count: reports.length,
+				total,
+				offset,
+			});
+		},
+	},
+);
+
+API.v1.addRoute(
+	'moderation.user.reportsByUserId',
+	{
+		authRequired: true,
+		validateParams: isGetUserReportsParams,
+		permissionsRequired: ['view-moderation-console'],
+	},
+	{
+		async get() {
+			const { userId, selector = '' } = this.queryParams;
+			const { sort } = await this.parseJsonQuery();
+			const { count = 50, offset = 0 } = await getPaginationItems(this.queryParams);
+
+			const user = await Users.findOneById<IUser>(userId, {
+				projection: {
+					_id: 1,
+					username: 1,
+					name: 1,
+					avatarETag: 1,
+					active: 1,
+					roles: 1,
+					emails: 1,
+					createdAt: 1,
+				},
+			});
+
+			const escapedSelector = escapeRegExp(selector);
+			const { cursor, totalCount } = ModerationReports.findUserReportsByReportedUserId(userId, escapedSelector, {
+				offset,
+				count,
+				sort,
+			});
+
+			const [reports, total] = await Promise.all([cursor.toArray(), totalCount]);
+
+			const emailSet = new Map<IUserEmail['address'], IUserEmail>();
+
+			reports.forEach((report) => {
+				const email = report.reportedUser?.emails?.[0];
+				if (email) {
+					emailSet.set(email.address, email);
+				}
+			});
+			if (user) {
+				user.emails = Array.from(emailSet.values());
+			}
+
+			return API.v1.success({
+				user,
+				reports,
 				count: reports.length,
 				total,
 				offset,
@@ -126,11 +238,6 @@ API.v1.addRoute(
 
 			const { count = 50, offset = 0 } = await getPaginationItems(this.queryParams);
 
-			const user = await Users.findOneById(userId, { projection: { _id: 1 } });
-			if (!user) {
-				return API.v1.failure('error-invalid-user');
-			}
-
 			const { cursor, totalCount } = ModerationReports.findReportedMessagesByReportedUserId(userId, '', {
 				offset,
 				count,
@@ -148,7 +255,7 @@ API.v1.addRoute(
 				moderator,
 			);
 
-			await ModerationReports.hideReportsByUserId(userId, this.userId, sanitizedReason, 'DELETE Messages');
+			await ModerationReports.hideMessageReportsByUserId(userId, this.userId, sanitizedReason, 'DELETE Messages');
 
 			return API.v1.success();
 		},
@@ -186,10 +293,37 @@ API.v1.addRoute(
 			const { userId: moderatorId } = this;
 
 			if (userId) {
-				await ModerationReports.hideReportsByUserId(userId, moderatorId, sanitizedReason, action);
+				await ModerationReports.hideMessageReportsByUserId(userId, moderatorId, sanitizedReason, action);
 			} else {
-				await ModerationReports.hideReportsByMessageId(msgId as string, moderatorId, sanitizedReason, action);
+				await ModerationReports.hideMessageReportsByMessageId(msgId as string, moderatorId, sanitizedReason, action);
 			}
+
+			return API.v1.success();
+		},
+	},
+);
+
+API.v1.addRoute(
+	'moderation.dismissUserReports',
+	{
+		authRequired: true,
+		validateParams: isArchiveReportProps,
+		permissionsRequired: ['manage-moderation-actions'],
+	},
+	{
+		async post() {
+			const { userId, reason, action: actionParam } = this.bodyParams;
+
+			if (!userId) {
+				return API.v1.failure('error-user-id-param-not-provided');
+			}
+
+			const sanitizedReason: string = reason ?? 'No reason provided';
+			const action: string = actionParam ?? 'None';
+
+			const { userId: moderatorId } = this;
+
+			await ModerationReports.hideUserReportsByUserId(userId, moderatorId, sanitizedReason, action);
 
 			return API.v1.success();
 		},
@@ -245,6 +379,33 @@ API.v1.addRoute(
 			}
 
 			return API.v1.success({ report });
+		},
+	},
+);
+
+API.v1.addRoute(
+	'moderation.reportUser',
+	{
+		authRequired: true,
+		validateParams: isModerationReportUserPost,
+	},
+	{
+		async post() {
+			const { userId, description } = this.bodyParams;
+
+			const {
+				user: { _id, name, username, createdAt },
+			} = this;
+
+			const reportedUser = await Users.findOneById(userId, { projection: { _id: 1, name: 1, username: 1, emails: 1, createdAt: 1 } });
+
+			if (!reportedUser) {
+				return API.v1.failure('Invalid user id provided.');
+			}
+
+			await ModerationReports.createWithDescriptionAndUser(reportedUser, description, { _id, name, username, createdAt });
+
+			return API.v1.success();
 		},
 	},
 );

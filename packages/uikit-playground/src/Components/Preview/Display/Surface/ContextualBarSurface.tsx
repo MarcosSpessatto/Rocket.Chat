@@ -8,30 +8,29 @@ import {
   ContextualbarFooter,
   ContextualbarHeader,
   ContextualbarTitle,
-  Margins,
 } from '@rocket.chat/fuselage';
 import { Scrollbars } from 'rc-scrollbars';
-import { useLayoutSizes } from '@rocket.chat/ui-contexts';
+import { ReactNode } from 'react';
 
-import DraggableList from '../../../Draggable/DraggableList';
-import type { DraggableListProps } from '../../../Draggable/DraggableList';
-
-const ContextualBarSurface = ({ blocks, onDragEnd }: DraggableListProps) => (
-  <Contextualbar height='100%' width={useLayoutSizes().contextualBar} position='absolute'>
+const ContextualBarSurface = ({ children }: { children: ReactNode }) => (
+  <Contextualbar>
     <ContextualbarHeader>
-      <Avatar url='data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==' />
+      <Avatar url="data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" />
       <ContextualbarTitle>{'Contextual Bar'}</ContextualbarTitle>
-      <ContextualbarAction data-qa='ContextualbarActionClose' title='Close' name='cross' />
+      <ContextualbarAction
+        data-qa="ContextualbarActionClose"
+        title="Close"
+        name="cross"
+      />
     </ContextualbarHeader>
 
-    <Box height='100%' p='12px'>
+    <Box height="100%" p="12px">
       <Box
-        height='100%'
-        display='flex'
+        height="100%"
+        display="flex"
         flexShrink={1}
-        flexDirection='column'
+        flexDirection="column"
         flexGrow={1}
-        overflow='hidden'
       >
         <Scrollbars
           autoHide
@@ -41,16 +40,20 @@ const ContextualBarSurface = ({ blocks, onDragEnd }: DraggableListProps) => (
             width: '100%',
             height: '100%',
             flexGrow: 1,
-            willChange: 'transform',
             overflowY: 'hidden',
           }}
           renderThumbVertical={({ style, ...props }): JSX.Element => (
-            <div {...props} style={{ ...style, backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: '7px' }} />
+            <div
+              {...props}
+              style={{
+                ...style,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                borderRadius: '7px',
+              }}
+            />
           )}
         >
-          <Margins blockEnd='x16'>
-            <DraggableList surface={3} blocks={blocks} onDragEnd={onDragEnd} />
-          </Margins>
+          <div>{children}</div>
         </Scrollbars>
       </Box>
     </Box>

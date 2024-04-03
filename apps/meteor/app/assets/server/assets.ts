@@ -1,28 +1,29 @@
 import crypto from 'crypto';
 import type { ServerResponse, IncomingMessage } from 'http';
 
+import type { IRocketChatAssets, IRocketChatAsset, ISetting } from '@rocket.chat/core-typings';
+import { Settings } from '@rocket.chat/models';
 import type { ServerMethods } from '@rocket.chat/ui-contexts';
+import type { NextHandleFunction } from 'connect';
+import sizeOf from 'image-size';
 import { Meteor } from 'meteor/meteor';
 import { WebApp, WebAppInternals } from 'meteor/webapp';
-import { WebAppHashing } from 'meteor/webapp-hashing';
-import _ from 'underscore';
-import sizeOf from 'image-size';
 import sharp from 'sharp';
-import type { NextHandleFunction } from 'connect';
-import type { IRocketChatAssets, IRocketChatAsset, IRocketChatAssetCache } from '@rocket.chat/core-typings';
-import { Settings } from '@rocket.chat/models';
 
-import { settings, settingsRegistry } from '../../settings/server';
-import { getURL } from '../../utils/server/getURL';
-import { getExtension } from '../../utils/lib/mimeTypes';
 import { hasPermissionAsync } from '../../authorization/server/functions/hasPermission';
 import { RocketChatFile } from '../../file/server';
 import { methodDeprecationLogger } from '../../lib/server/lib/deprecationWarningLogger';
+import { settings, settingsRegistry } from '../../settings/server';
+import { getExtension } from '../../utils/lib/mimeTypes';
+import { getURL } from '../../utils/server/getURL';
 
 const RocketChatAssetsInstance = new RocketChatFile.GridFS({
 	name: 'assets',
 });
-const assets: IRocketChatAssets = {
+
+type IRocketChatAssetsConfig = Record<keyof IRocketChatAssets, IRocketChatAsset & { settingOptions?: Partial<ISetting> }>;
+
+const assets: IRocketChatAssetsConfig = {
 	logo: {
 		label: 'logo (svg, png, jpg)',
 		defaultUrl: 'images/logo/logo.svg',
@@ -191,9 +192,27 @@ const assets: IRocketChatAssets = {
 			extensions: ['svg'],
 		},
 	},
+	livechat_widget_logo: {
+		label: 'widget logo (svg, png, jpg)',
+		constraints: {
+			type: 'image',
+			extensions: ['svg', 'png', 'jpg', 'jpeg'],
+		},
+		settingOptions: {
+			section: 'Livechat',
+			group: 'Omnichannel',
+			invalidValue: {
+				defaultUrl: undefined,
+			},
+			enableQuery: { _id: 'Livechat_enabled', value: true },
+			enterprise: true,
+			modules: ['livechat-enterprise'],
+			sorter: 999 + 1,
+		},
+	},
 };
 
-function getAssetByKey(key: string): IRocketChatAsset {
+function getAssetByKey(key: string) {
 	return assets[key as keyof IRocketChatAssets];
 }
 
@@ -234,8 +253,8 @@ class RocketChatAssetsClass {
 		await RocketChatAssetsInstance.deleteFile(asset);
 
 		const ws = RocketChatAssetsInstance.createWriteStream(asset, contentType);
-		ws.on('end', function () {
-			return setTimeout(async function () {
+		ws.on('end', () => {
+			return setTimeout(async () => {
 				const key = `Assets_${asset}`;
 				const value = {
 					url: `assets/${asset}.${extension}`,
@@ -243,7 +262,6 @@ class RocketChatAssetsClass {
 				};
 
 				void Settings.updateValueById(key, value);
-				// eslint-disable-next-line @typescript-eslint/no-use-before-define
 				return RocketChatAssets.processAsset(key, value);
 			}, 200);
 		});
@@ -265,7 +283,6 @@ class RocketChatAssetsClass {
 		};
 
 		void Settings.updateValueById(key, value);
-		// eslint-disable-next-line @typescript-eslint/no-use-before-define
 		await RocketChatAssets.processAsset(key, value);
 	}
 
@@ -329,7 +346,7 @@ class RocketChatAssetsClass {
 
 export const RocketChatAssets = new RocketChatAssetsClass();
 
-async function addAssetToSetting(asset: string, value: IRocketChatAsset): Promise<void> {
+export async function addAssetToSetting(asset: string, value: IRocketChatAsset, options?: Partial<ISetting>): Promise<void> {
 	const key = `Assets_${asset}`;
 
 	await settingsRegistry.add(
@@ -338,19 +355,21 @@ async function addAssetToSetting(asset: string, value: IRocketChatAsset): Promis
 			defaultUrl: value.defaultUrl,
 		},
 		{
-			type: 'asset',
-			group: 'Assets',
-			fileConstraints: value.constraints,
-			i18nLabel: value.label,
-			asset,
-			public: true,
-			wizard: value.wizard,
+			...{
+				type: 'asset',
+				group: 'Assets',
+				fileConstraints: value.constraints,
+				i18nLabel: value.label,
+				asset,
+				public: true,
+			},
+			...options,
 		},
 	);
 
 	const currentValue = settings.get<IRocketChatAsset>(key);
 
-	if (typeof currentValue === 'object' && currentValue.defaultUrl !== getAssetByKey(asset).defaultUrl) {
+	if (currentValue && typeof currentValue === 'object' && currentValue.defaultUrl !== getAssetByKey(asset).defaultUrl) {
 		currentValue.defaultUrl = getAssetByKey(asset).defaultUrl;
 		await Settings.updateValueById(key, currentValue);
 	}
@@ -358,8 +377,8 @@ async function addAssetToSetting(asset: string, value: IRocketChatAsset): Promis
 
 void (async () => {
 	for await (const key of Object.keys(assets)) {
-		const value = getAssetByKey(key);
-		await addAssetToSetting(key, value);
+		const { wizard, settingOptions, ...value } = getAssetByKey(key);
+		await addAssetToSetting(key, value, { ...settingOptions, wizard });
 	}
 })();
 
@@ -372,55 +391,6 @@ Meteor.startup(() => {
 		});
 	}, 200);
 });
-
-const { calculateClientHash } = WebAppHashing;
-
-WebAppHashing.calculateClientHash = function (manifest, includeFilter, runtimeConfigOverride): string {
-	for (const key of Object.keys(assets)) {
-		const value = getAssetByKey(key);
-		if (!value.cache && !value.defaultUrl) {
-			continue;
-		}
-
-		let cache: IRocketChatAssetCache;
-		if (value.cache) {
-			cache = {
-				path: value.cache.path,
-				cacheable: value.cache.cacheable,
-				sourceMapUrl: value.cache.sourceMapUrl,
-				where: value.cache.where,
-				type: value.cache.type,
-				url: value.cache.url,
-				size: value.cache.size,
-				hash: value.cache.hash,
-			};
-		} else {
-			const extension = value.defaultUrl?.split('.').pop();
-			cache = {
-				path: `assets/${key}.${extension}`,
-				cacheable: false,
-				sourceMapUrl: undefined,
-				where: 'client',
-				type: 'asset',
-				url: `/assets/${key}.${extension}?v3`,
-				hash: 'v3',
-			};
-		}
-
-		const manifestItem = _.findWhere(manifest, {
-			path: key,
-		});
-
-		if (manifestItem) {
-			const index = manifest.indexOf(manifestItem);
-			manifest[index] = cache;
-		} else {
-			manifest.push(cache);
-		}
-	}
-
-	return calculateClientHash.call(this, manifest, includeFilter, runtimeConfigOverride);
-};
 
 declare module '@rocket.chat/ui-contexts' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention

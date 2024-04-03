@@ -11,12 +11,12 @@ import {
 	OptionSkeleton,
 } from '@rocket.chat/fuselage';
 import { usePrefersReducedMotion } from '@rocket.chat/fuselage-hooks';
+import { UserAvatar } from '@rocket.chat/ui-avatar';
 import type { ReactElement, MouseEvent } from 'react';
 import React, { useState } from 'react';
 
 import { getUserDisplayNames } from '../../../../../lib/getUserDisplayNames';
 import { ReactiveUserStatus } from '../../../../components/UserStatus';
-import UserAvatar from '../../../../components/avatar/UserAvatar';
 import { usePreventPropagation } from '../../../../hooks/usePreventPropagation';
 import UserActions from './RoomMembersActions';
 
@@ -49,7 +49,11 @@ const RoomMembersItem = ({ _id, name, username, federated, onClickView, rid, rel
 				{nameOrUsername} {displayUsername && <OptionDescription>({displayUsername})</OptionDescription>}
 			</OptionContent>
 			<OptionMenu onClick={preventPropagation}>
-				{showButton ? <UserActions username={username} rid={rid} _id={_id} reload={reload} /> : <IconButton tiny icon='kebab' />}
+				{showButton ? (
+					<UserActions username={username} name={name} rid={rid} _id={_id} reload={reload} />
+				) : (
+					<IconButton tiny icon='kebab' />
+				)}
 			</OptionMenu>
 		</Option>
 	);

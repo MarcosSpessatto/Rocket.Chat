@@ -1,9 +1,9 @@
-import { Meteor } from 'meteor/meteor';
 import { OEmbedCache } from '@rocket.chat/models';
 import type { ServerMethods } from '@rocket.chat/ui-contexts';
+import { Meteor } from 'meteor/meteor';
 
-import { settings } from '../../app/settings/server';
 import { hasPermissionAsync } from '../../app/authorization/server/functions/hasPermission';
+import { settings } from '../../app/settings/server';
 
 declare module '@rocket.chat/ui-contexts' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -11,6 +11,13 @@ declare module '@rocket.chat/ui-contexts' {
 		OEmbedCacheCleanup(): { message: string };
 	}
 }
+
+export const executeClearOEmbedCache = async () => {
+	const date = new Date();
+	const expirationDays = settings.get<number>('API_EmbedCacheExpirationDays');
+	date.setDate(date.getDate() - expirationDays);
+	return OEmbedCache.removeBeforeDate(date);
+};
 
 Meteor.methods<ServerMethods>({
 	async OEmbedCacheCleanup() {
@@ -21,10 +28,7 @@ Meteor.methods<ServerMethods>({
 			});
 		}
 
-		const date = new Date();
-		const expirationDays = settings.get<number>('API_EmbedCacheExpirationDays');
-		date.setDate(date.getDate() - expirationDays);
-		await OEmbedCache.removeAfterDate(date);
+		await executeClearOEmbedCache();
 		return {
 			message: 'cache_cleared',
 		};

@@ -14,7 +14,7 @@ import {
 	ContextualbarContent,
 } from '../../../../components/Contextualbar';
 import { FormSkeleton } from '../../../../components/Skeleton';
-import UserCard from '../../../../components/UserCard';
+import { UserCardRole } from '../../../../components/UserCard';
 import UserInfo from '../../../../components/UserInfo';
 import { ReactiveUserStatus } from '../../../../components/UserStatus';
 import { AsyncStatePhase } from '../../../../hooks/useAsyncState';
@@ -68,7 +68,7 @@ const UserInfoWithData = ({ uid, username, rid, onClose, onClickBack }: UserInfo
 			name,
 			username,
 			lastLogin,
-			roles: roles && getRoles(roles).map((role, index) => <UserCard.Role key={index}>{role}</UserCard.Role>),
+			roles: roles && getRoles(roles).map((role, index) => <UserCardRole key={index}>{role}</UserCardRole>),
 			bio,
 			canViewAllInfo,
 			phone,
@@ -99,17 +99,12 @@ const UserInfoWithData = ({ uid, username, rid, onClose, onClickBack }: UserInfo
 			)}
 
 			{error && !user && (
-				<ContextualbarContent pb='x16'>
+				<ContextualbarContent pb={16}>
 					<Callout type='danger'>{t('User_not_found')}</Callout>
 				</ContextualbarContent>
 			)}
 
-			{!isLoading && user && (
-				<UserInfo
-					{...user}
-					actions={<UserInfoActions user={{ _id: user?._id, username: user?.username }} rid={rid} backToList={onClickBack} />}
-				/>
-			)}
+			{!isLoading && user && <UserInfo {...user} actions={<UserInfoActions user={user} rid={rid} backToList={onClickBack} />} />}
 		</>
 	);
 };

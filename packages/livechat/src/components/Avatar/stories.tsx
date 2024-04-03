@@ -2,7 +2,7 @@ import type { Meta, Story } from '@storybook/preact';
 import type { ComponentProps } from 'preact';
 
 import { Avatar } from '.';
-import { gazzoAvatar } from '../../helpers.stories';
+import { gazzoAvatar } from '../../../.storybook/helpers';
 
 export default {
 	title: 'Components/Avatar',
@@ -10,14 +10,14 @@ export default {
 	args: {
 		src: gazzoAvatar,
 		description: 'user description',
-		status: null,
+		status: undefined,
 		large: false,
 	},
 	argTypes: {
 		status: {
 			control: {
 				type: 'select',
-				options: [null, 'offline', 'away', 'busy', 'online'],
+				options: [undefined, 'offline', 'away', 'busy', 'online'],
 			},
 		},
 	},

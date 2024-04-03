@@ -1,29 +1,27 @@
-import { Box, Callout, Message } from '@rocket.chat/fuselage';
+import { Box, Callout, Message, StatesAction, StatesActions, StatesIcon, StatesTitle } from '@rocket.chat/fuselage';
 import { useMutableCallback } from '@rocket.chat/fuselage-hooks';
-import { useEndpoint, useRoute, useToastMessageDispatch, useTranslation } from '@rocket.chat/ui-contexts';
+import { useEndpoint, useToastMessageDispatch, useTranslation } from '@rocket.chat/ui-contexts';
 import { useQuery } from '@tanstack/react-query';
-import React, { useMemo } from 'react';
+import React, { Fragment } from 'react';
 
-import { ContextualbarHeader, ContextualbarTitle, ContextualbarClose, ContextualbarFooter } from '../../../components/Contextualbar';
+import { ContextualbarFooter } from '../../../components/Contextualbar';
 import GenericNoResults from '../../../components/GenericNoResults';
-import { useUserDisplayName } from '../../../hooks/useUserDisplayName';
 import MessageContextFooter from './MessageContextFooter';
 import ContextMessage from './helpers/ContextMessage';
 
-// TODO: Missing Error State
-const UserMessages = ({ userId, onRedirect }: { userId: string; onRedirect: (mid: string) => void }): JSX.Element => {
+const UserMessages = ({ userId, onRedirect }: { userId: string; onRedirect: (mid: string) => void }) => {
 	const t = useTranslation();
 	const dispatchToastMessage = useToastMessageDispatch();
-	const moderationRoute = useRoute('moderation-console');
 	const getUserMessages = useEndpoint('GET', '/v1/moderation.user.reportedMessages');
 
 	const {
-		data: userMessages,
+		data: report,
 		refetch: reloadUserMessages,
-		isLoading: isLoadingUserMessages,
-		isSuccess: isSuccessUserMessages,
+		isLoading,
+		isSuccess,
+		isError,
 	} = useQuery(
-		['moderation.userMessages', { userId }],
+		['moderation', 'msgReports', 'fetchDetails', { userId }],
 		async () => {
 			const messages = await getUserMessages({ userId });
 			return messages;
@@ -35,69 +33,57 @@ const UserMessages = ({ userId, onRedirect }: { userId: string; onRedirect: (mid
 		},
 	);
 
-	// opens up the 'reports' tab when the user clicks on a user in the 'users' tab
-	const handleClick = useMutableCallback((id): void => {
-		moderationRoute.push({
-			context: 'reports',
-			id,
-		});
-	});
-
 	const handleChange = useMutableCallback(() => {
 		reloadUserMessages();
 	});
 
-	const username = useMemo(() => {
-		if (userMessages?.messages[0]?.message?.u?.username) {
-			return userMessages?.messages[0].message.u.username;
-		}
-		return '';
-	}, [userMessages?.messages]);
-
-	const name = useMemo(() => {
-		if (userMessages?.messages[0]?.message?.u?.name) {
-			return userMessages?.messages[0].message.u.name;
-		}
-		return '';
-	}, [userMessages?.messages]);
-
-	const displayName =
-		useUserDisplayName({
-			name,
-			username,
-		}) || userId;
-
 	return (
 		<>
-			<ContextualbarHeader>
-				<ContextualbarTitle>{t('Moderation_Message_context_header', { displayName })}</ContextualbarTitle>
-				<ContextualbarClose onClick={() => moderationRoute.push({})} />
-			</ContextualbarHeader>
 			<Box display='flex' flexDirection='column' width='full' height='full' overflowY='auto' overflowX='hidden'>
-				{isSuccessUserMessages && userMessages.messages.length > 0 && (
-					<Callout margin={15} title={t('Moderation_Duplicate_messages')} type='warning' icon='warning'>
-						{t('Moderation_Duplicate_messages_warning')}
-					</Callout>
-				)}{' '}
-				{isLoadingUserMessages && <Message>{t('Loading')}</Message>}
-				{isSuccessUserMessages &&
-					userMessages.messages.length > 0 &&
-					userMessages.messages.map((message) => (
-						<Box key={message._id}>
+				{isLoading && <Message>{t('Loading')}</Message>}
+				{isSuccess && (
+					<Box padding={24}>
+						{report.messages.length > 0 && (
+							<Callout title={t('Moderation_Duplicate_messages')} type='warning' icon='warning'>
+								{t('Moderation_Duplicate_messages_warning')}
+							</Callout>
+						)}
+						{!report.user && (
+							<Callout mbs={8} type='warning' icon='warning'>
+								{t('Moderation_User_deleted_warning')}
+							</Callout>
+						)}
+					</Box>
+				)}
+				{isSuccess &&
+					report.messages.length > 0 &&
+					report.messages.map((message) => (
+						<Fragment key={message._id}>
 							<ContextMessage
 								message={message.message}
 								room={message.room}
-								handleClick={handleClick}
 								onRedirect={onRedirect}
 								onChange={handleChange}
+								deleted={!report.user}
 							/>
-						</Box>
+						</Fragment>
 					))}
-				{isSuccessUserMessages && userMessages.messages.length === 0 && <GenericNoResults />}
+				{isSuccess && report.messages.length === 0 && <GenericNoResults title={t('No_message_reports')} icon='message' />}
+				{isError && (
+					<Box display='flex' flexDirection='column' alignItems='center' pb={20} color='default'>
+						<StatesIcon name='warning' variation='danger' />
+						<StatesTitle>{t('Something_went_wrong')}</StatesTitle>
+						<StatesActions>
+							<StatesAction onClick={handleChange}>{t('Reload_page')}</StatesAction>
+						</StatesActions>
+					</Box>
+				)}
 			</Box>
-			<ContextualbarFooter display='flex'>
-				{isSuccessUserMessages && userMessages.messages.length > 0 && <MessageContextFooter userId={userId} />}
-			</ContextualbarFooter>
+			{isSuccess && report.messages.length > 0 && (
+				<ContextualbarFooter>
+					<MessageContextFooter userId={userId} deleted={!report.user} />
+				</ContextualbarFooter>
+			)}
 		</>
 	);
 };

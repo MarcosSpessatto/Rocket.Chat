@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { before, describe, it } from 'mocha';
 import type { Response } from 'supertest';
 
 import { api, request, credentials, getCredentials } from '../../../data/api-data';
@@ -12,7 +13,7 @@ describe('Mailer', () => {
 				.post(api('mailer'))
 				.set(credentials)
 				.send({
-					from: 'test-email@example.com',
+					from: 'rocketchat.internal.admin.test@rocket.chat',
 					subject: 'Test email subject',
 					body: 'Test email body [unsubscribe]',
 					dryrun: true,

@@ -1,8 +1,9 @@
-import { readFileSync } from 'fs';
 import { randomUUID } from 'crypto';
+import { readFileSync } from 'fs';
 import path from 'path';
 
 import { expect } from 'chai';
+import { before, describe, it, after } from 'mocha';
 
 import { getCredentials, api, request, credentials } from '../../data/api-data.js';
 
@@ -80,6 +81,20 @@ describe('[CustomSounds]', function () {
 				})
 				.expect(200);
 		});
+
+		after(() =>
+			request
+				.post(api('method.call/deleteCustomSound'))
+				.set(credentials)
+				.send({
+					message: JSON.stringify({
+						msg: 'method',
+						id: '33',
+						method: 'deleteCustomSound',
+						params: [fileId],
+					}),
+				}),
+		);
 
 		it('should return forbidden if the there is no fileId on the url', (done) => {
 			request

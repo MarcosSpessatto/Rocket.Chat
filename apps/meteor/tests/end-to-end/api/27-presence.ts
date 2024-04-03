@@ -1,24 +1,28 @@
 import { expect } from 'chai';
+import { before, describe, it, after } from 'mocha';
 import type { Response } from 'supertest';
 
 import { getCredentials, api, request, credentials } from '../../data/api-data.js';
 import { updatePermission } from '../../data/permissions.helper';
 import { password } from '../../data/user';
-import { createUser, login } from '../../data/users.helper';
+import { createUser, deleteUser, login } from '../../data/users.helper';
 
 describe('[Presence]', function () {
+	let createdUser: any;
 	this.retries(0);
 
 	before((done) => getCredentials(done));
 
 	let unauthorizedUserCredentials: any;
 	before(async () => {
-		const createdUser = await createUser();
+		createdUser = await createUser();
 		unauthorizedUserCredentials = await login(createdUser.username, password);
 	});
 
+	after(() => Promise.all([updatePermission('manage-user-status', ['admin']), deleteUser(createdUser)]));
+
 	describe('[/presence.getConnections]', () => {
-		it('should throw an error if not authenticated', async function () {
+		it('should throw an error if not authenticated', async () => {
 			await request
 				.get(api('presence.getConnections'))
 				.expect('Content-Type', 'application/json')
@@ -29,7 +33,7 @@ describe('[Presence]', function () {
 				});
 		});
 
-		it('should throw an error if user is unauthorized', async function () {
+		it('should throw an error if user is unauthorized', async () => {
 			await request
 				.get(api('presence.getConnections'))
 				.set(unauthorizedUserCredentials)
@@ -41,7 +45,7 @@ describe('[Presence]', function () {
 				});
 		});
 
-		it("should throw an error if doesn't have required permission", async function () {
+		it("should throw an error if doesn't have required permission", async () => {
 			await updatePermission('manage-user-status', []);
 
 			await request
@@ -57,7 +61,7 @@ describe('[Presence]', function () {
 			await updatePermission('manage-user-status', ['admin']);
 		});
 
-		it('should return current and max connections of 200', async function () {
+		it('should return current and max connections of 200', async () => {
 			await request
 				.get(api('presence.getConnections'))
 				.set(credentials)
@@ -72,7 +76,7 @@ describe('[Presence]', function () {
 	});
 
 	describe('[/presence.enableBroadcast]', () => {
-		it('should throw an error if not authenticated', async function () {
+		it('should throw an error if not authenticated', async () => {
 			await request
 				.post(api('presence.enableBroadcast'))
 				.expect('Content-Type', 'application/json')
@@ -83,7 +87,7 @@ describe('[Presence]', function () {
 				});
 		});
 
-		it('should throw an error if user is unauthorized', async function () {
+		it('should throw an error if user is unauthorized', async () => {
 			await request
 				.post(api('presence.enableBroadcast'))
 				.set(unauthorizedUserCredentials)
@@ -95,7 +99,7 @@ describe('[Presence]', function () {
 				});
 		});
 
-		it("should throw an error if doesn't have required permission", async function () {
+		it("should throw an error if doesn't have required permission", async () => {
 			await updatePermission('manage-user-status', []);
 
 			await request
@@ -111,7 +115,7 @@ describe('[Presence]', function () {
 			await updatePermission('manage-user-status', ['admin']);
 		});
 
-		it('should return success', async function () {
+		it('should return success', async () => {
 			await request
 				.post(api('presence.enableBroadcast'))
 				.set(credentials)

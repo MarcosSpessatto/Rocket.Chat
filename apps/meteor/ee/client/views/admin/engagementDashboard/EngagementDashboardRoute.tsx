@@ -1,11 +1,19 @@
-import { usePermission, useRouteParameter, useRouter, useSetModal, useTranslation } from '@rocket.chat/ui-contexts';
+import {
+	usePermission,
+	useRouter,
+	useSetModal,
+	useCurrentModal,
+	useTranslation,
+	useRouteParameter,
+	useEndpoint,
+} from '@rocket.chat/ui-contexts';
 import type { ReactElement } from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
+import { getURL } from '../../../../../app/utils/client/getURL';
 import GenericUpsellModal from '../../../../../client/components/GenericUpsellModal';
+import { useUpsellActions } from '../../../../../client/components/GenericUpsellModal/hooks';
 import PageSkeleton from '../../../../../client/components/PageSkeleton';
-import { useEndpointAction } from '../../../../../client/hooks/useEndpointAction';
-import { useIsEnterprise } from '../../../../../client/hooks/useIsEnterprise';
 import NotAuthorizedPage from '../../../../../client/views/notAuthorized/NotAuthorizedPage';
 import { useHasLicenseModule } from '../../../hooks/useHasLicenseModule';
 import EngagementDashboardPage from './EngagementDashboardPage';
@@ -16,54 +24,44 @@ const isValidTab = (tab: string | undefined): tab is 'users' | 'messages' | 'cha
 const EngagementDashboardRoute = (): ReactElement | null => {
 	const t = useTranslation();
 	const canViewEngagementDashboard = usePermission('view-engagement-dashboard');
-
-	const { data } = useIsEnterprise();
-	const hasEngagementDashboard = useHasLicenseModule('engagement-dashboard');
-	const isUpsell = !data?.isEnterprise || !hasEngagementDashboard;
+	const setModal = useSetModal();
+	const isModalOpen = useCurrentModal() !== null;
 
 	const router = useRouter();
 	const tab = useRouteParameter('tab');
+	const eventStats = useEndpoint('POST', '/v1/statistics.telemetry');
 
-	const setModal = useSetModal();
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const hasEngagementDashboard = useHasLicenseModule('engagement-dashboard') as boolean;
 
-	const handleOpenModal = useCallback(() => {
-		setModal(
-			<GenericUpsellModal
-				title={t('Engagement_Dashboard')}
-				img='images/engagement.png'
-				subtitle={t('Analyze_practical_usage')}
-				description={t('Enrich_your_workspace')}
-				onCloseEffect={() => setIsModalOpen(false)}
-			/>,
-		);
-		setIsModalOpen(true);
-	}, [setModal, t]);
+	const { shouldShowUpsell, handleManageSubscription } = useUpsellActions(hasEngagementDashboard);
 
 	useEffect(() => {
-		if (isUpsell) {
-			handleOpenModal();
-			return;
-		}
-
-		const { tab } = router.getRouteParameters();
-
-		if (!isValidTab(tab)) {
-			router.navigate(
-				{
-					pattern: '/admin/engagement/:tab?',
-					params: { tab: 'users' },
-				},
-				{ replace: true },
+		if (shouldShowUpsell) {
+			setModal(
+				<GenericUpsellModal
+					title={t('Engagement_Dashboard')}
+					img={getURL('images/engagement.png')}
+					subtitle={t('Analyze_practical_usage')}
+					description={t('Enrich_your_workspace')}
+					onClose={() => setModal(null)}
+					onConfirm={handleManageSubscription}
+					onCancel={() => setModal(null)}
+				/>,
 			);
 		}
 
-		return () => {
-			setModal(null);
-		};
-	}, [handleOpenModal, isUpsell, router, setModal]);
-
-	const eventStats = useEndpointAction('POST', '/v1/statistics.telemetry');
+		router.subscribeToRouteChange(() => {
+			if (!isValidTab(tab)) {
+				router.navigate(
+					{
+						pattern: '/admin/engagement/:tab?',
+						params: { tab: 'users' },
+					},
+					{ replace: true },
+				);
+			}
+		});
+	}, [shouldShowUpsell, router, tab, setModal, t, handleManageSubscription]);
 
 	if (isModalOpen) {
 		return <PageSkeleton />;
@@ -76,6 +74,7 @@ const EngagementDashboardRoute = (): ReactElement | null => {
 	eventStats({
 		params: [{ eventName: 'updateCounter', settingsId: 'Engagement_Dashboard_Load_Count' }],
 	});
+
 	return (
 		<EngagementDashboardPage
 			tab={tab as 'users' | 'messages' | 'channels'}

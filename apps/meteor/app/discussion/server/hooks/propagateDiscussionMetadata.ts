@@ -1,7 +1,20 @@
+import type { IRoom } from '@rocket.chat/core-typings';
 import { Messages, Rooms } from '@rocket.chat/models';
 
 import { callbacks } from '../../../../lib/callbacks';
+import { broadcastMessageFromData } from '../../../../server/modules/watchers/lib/messages';
 import { deleteRoom } from '../../../lib/server/functions/deleteRoom';
+
+const updateAndNotifyParentRoomWithParentMessage = async (room: IRoom): Promise<void> => {
+	const { value: parentMessage } = await Messages.refreshDiscussionMetadata(room);
+	if (!parentMessage) {
+		return;
+	}
+	void broadcastMessageFromData({
+		id: parentMessage._id,
+		data: parentMessage,
+	});
+};
 
 /**
  * We need to propagate the writing of new message in a discussion to the linking
@@ -9,7 +22,7 @@ import { deleteRoom } from '../../../lib/server/functions/deleteRoom';
  */
 callbacks.add(
 	'afterSaveMessage',
-	async function (message, { _id, prid }) {
+	async (message, { _id, prid }) => {
 		if (!prid) {
 			return message;
 		}
@@ -25,7 +38,7 @@ callbacks.add(
 			return message;
 		}
 
-		await Messages.refreshDiscussionMetadata(room);
+		await updateAndNotifyParentRoomWithParentMessage(room);
 
 		return message;
 	},
@@ -35,7 +48,7 @@ callbacks.add(
 
 callbacks.add(
 	'afterDeleteMessage',
-	async function (message, { _id, prid }) {
+	async (message, { _id, prid }) => {
 		if (prid) {
 			const room = await Rooms.findOneById(_id, {
 				projection: {
@@ -45,7 +58,7 @@ callbacks.add(
 			});
 
 			if (room) {
-				await Messages.refreshDiscussionMetadata(room);
+				await updateAndNotifyParentRoomWithParentMessage(room);
 			}
 		}
 		if (message.drid) {

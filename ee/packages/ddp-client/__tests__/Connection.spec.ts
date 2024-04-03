@@ -1,7 +1,7 @@
 import WS from 'jest-websocket-mock';
 
-import { MinimalDDPClient } from '../src/MinimalDDPClient';
 import { ConnectionImpl } from '../src/Connection';
+import { MinimalDDPClient } from '../src/MinimalDDPClient';
 import { handleConnection, handleConnectionAndRejects, handleMethod } from './helpers';
 
 let server: WS;
@@ -136,7 +136,7 @@ it('should queue messages if the connection is not ready', async () => {
 
 	expect(connection.queue.size).toBe(0);
 
-	await handleMethod(server, 'method', ['arg1', 'arg2']);
+	await handleMethod(server, 'method', ['arg1', 'arg2'], '1');
 });
 
 it('should throw an error if a reconnect is called while a connection is in progress', async () => {

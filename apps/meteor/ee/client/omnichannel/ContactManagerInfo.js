@@ -1,8 +1,8 @@
 import { css } from '@rocket.chat/css-in-js';
+import { UserAvatar } from '@rocket.chat/ui-avatar';
 import React, { useMemo } from 'react';
 
 import { UserStatus } from '../../../client/components/UserStatus';
-import UserAvatar from '../../../client/components/avatar/UserAvatar';
 import { AsyncStatePhase } from '../../../client/hooks/useAsyncState';
 import { useEndpointData } from '../../../client/hooks/useEndpointData';
 import AgentInfoDetails from '../../../client/views/omnichannel/components/AgentInfoDetails';
@@ -26,7 +26,7 @@ function ContactManagerInfo({ username }) {
 		<>
 			<Info className={wordBreak} style={{ display: 'flex' }}>
 				<UserAvatar title={username} username={username} />
-				<AgentInfoDetails mis='x10' name={name} shortName={username} status={<UserStatus status={status} />} />
+				<AgentInfoDetails mis={10} name={name} shortName={username} status={<UserStatus status={status} />} />
 			</Info>
 		</>
 	);

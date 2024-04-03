@@ -2,8 +2,8 @@ import { action } from '@storybook/addon-actions';
 import type { Meta, Story } from '@storybook/preact';
 import type { ComponentProps } from 'preact';
 
-import { screenDecorator, screenProps } from '../../helpers.stories';
-import SwitchDepartment from './component';
+import { screenDecorator } from '../../../.storybook/helpers';
+import SwitchDepartment from './index';
 
 export default {
 	title: 'Routes/SwitchDepartment',
@@ -28,7 +28,6 @@ export default {
 		loading: false,
 		onSubmit: action('submit'),
 		onCancel: action('cancel'),
-		...screenProps(),
 	},
 	decorators: [screenDecorator],
 	parameters: {
@@ -40,9 +39,3 @@ const Template: Story<ComponentProps<typeof SwitchDepartment>> = (args) => <Swit
 
 export const Normal = Template.bind({});
 Normal.storyName = 'normal';
-
-export const Loading = Template.bind({});
-Loading.storyName = 'loading';
-Loading.args = {
-	loading: true,
-};

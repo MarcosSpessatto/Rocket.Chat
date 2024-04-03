@@ -2,10 +2,10 @@ import { css } from '@rocket.chat/css-in-js';
 import { Box, Button, ButtonGroup } from '@rocket.chat/fuselage';
 import { useToggle } from '@rocket.chat/fuselage-hooks';
 import { useTranslation } from '@rocket.chat/ui-contexts';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import React from 'react';
 
-const CodeMirrorBox = ({ label, children }: { label: string; children: ReactElement }) => {
+const CodeMirrorBox = ({ label, children }: { label: ReactNode; children: ReactElement }) => {
 	const t = useTranslation();
 	const [fullScreen, toggleFullScreen] = useToggle(false);
 
@@ -35,16 +35,18 @@ const CodeMirrorBox = ({ label, children }: { label: string; children: ReactElem
 			className={['code-mirror-box', fullScreen && 'code-mirror-box-fullscreen', fullScreen && fullScreenStyle].filter(Boolean)}
 		>
 			{fullScreen && (
-				<Box fontScale='p1' mbe='x4'>
+				<Box fontScale='p1' mbe={4}>
 					{label}
 				</Box>
 			)}
 			{children}
-			<ButtonGroup mbs='x8'>
-				<Button primary onClick={(): void => toggleFullScreen()}>
-					{fullScreen ? t('Exit_Full_Screen') : t('Full_Screen')}
-				</Button>
-			</ButtonGroup>
+			<Box mbs={8}>
+				<ButtonGroup>
+					<Button primary onClick={(): void => toggleFullScreen()}>
+						{fullScreen ? t('Exit_Full_Screen') : t('Full_Screen')}
+					</Button>
+				</ButtonGroup>
+			</Box>
 		</Box>
 	);
 };

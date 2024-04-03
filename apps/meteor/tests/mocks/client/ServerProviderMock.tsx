@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
-import type { FC, ContextType } from 'react';
+import type { Serialized } from '@rocket.chat/core-typings';
+import type { Method, PathPattern, OperationParams, UrlParams, OperationResult } from '@rocket.chat/rest-typings';
 import type { EndpointFunction } from '@rocket.chat/ui-contexts';
 import { ServerContext } from '@rocket.chat/ui-contexts';
-import type { Method, PathPattern, OperationParams, UrlParams, OperationResult } from '@rocket.chat/rest-typings';
-import type { Serialized } from '@rocket.chat/core-typings';
+import React, { useMemo } from 'react';
+import type { FC, ContextType } from 'react';
 
 type RegisterEndpoint = <TMethod extends Method, TPathPattern extends PathPattern>(
 	method: TMethod,
@@ -56,7 +56,6 @@ const uploadToEndpoint = async () => {
 	throw new Error('not implemented');
 }; // to be implemented
 const getStream = () => () => () => undefined; // to be implemented
-const getSingleStream = () => () => () => undefined; // to be implemented
 const callEndpoint = () => {
 	throw new Error('not implemented');
 }; // to be implemented
@@ -67,7 +66,6 @@ const contextValue = {
 	// callMethod,
 	callEndpoint,
 	uploadToEndpoint,
-	getSingleStream,
 	getStream,
 };
 

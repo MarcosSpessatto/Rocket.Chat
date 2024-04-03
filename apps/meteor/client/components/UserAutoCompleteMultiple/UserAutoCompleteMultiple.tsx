@@ -1,11 +1,10 @@
 import { AutoComplete, Box, OptionAvatar, Option, OptionContent, Chip, OptionDescription } from '@rocket.chat/fuselage';
 import { useDebouncedValue } from '@rocket.chat/fuselage-hooks';
+import { UserAvatar } from '@rocket.chat/ui-avatar';
 import { useEndpoint } from '@rocket.chat/ui-contexts';
 import { useQuery } from '@tanstack/react-query';
 import type { ComponentProps, ReactElement } from 'react';
 import React, { memo, useMemo, useState } from 'react';
-
-import UserAvatar from '../avatar/UserAvatar';
 
 const query = (
 	term = '',
@@ -31,10 +30,10 @@ const UserAutoCompleteMultiple = ({ onChange, ...props }: UserAutoCompleteMultip
 			setFilter={setFilter}
 			onChange={onChange}
 			multiple
-			renderSelected={({ selected: { value, label }, onRemove }): ReactElement => (
-				<Chip {...props} height='x20' value={value} onClick={onRemove} mie='x4'>
+			renderSelected={({ selected: { value, label }, onRemove, ...props }): ReactElement => (
+				<Chip {...props} height='x20' value={value} onClick={onRemove} mie={4}>
 					<UserAvatar size='x20' username={value} />
-					<Box is='span' margin='none' mis='x4'>
+					<Box is='span' margin='none' mis={4}>
 						{label}
 					</Box>
 				</Chip>

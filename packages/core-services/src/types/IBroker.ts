@@ -1,5 +1,5 @@
+import type { EventSignatures } from '../events/Events';
 import type { IServiceClass } from './ServiceClass';
-import type { EventSignatures } from '../Events';
 
 export interface IBrokerNode {
 	id: string;
@@ -27,6 +27,7 @@ export type BaseMetricOptions = {
 	labelNames?: Array<string>;
 	unit?: string;
 	aggregator?: string;
+	[key: string]: unknown;
 };
 
 export interface IServiceMetrics {
@@ -47,7 +48,7 @@ export interface IServiceMetrics {
 
 export interface IBroker {
 	metrics?: IServiceMetrics;
-	destroyService(service: IServiceClass): void;
+	destroyService(service: IServiceClass): Promise<void>;
 	createService(service: IServiceClass, serviceDependencies?: string[]): void;
 	call(method: string, data: any): Promise<any>;
 	waitAndCall(method: string, data: any): Promise<any>;

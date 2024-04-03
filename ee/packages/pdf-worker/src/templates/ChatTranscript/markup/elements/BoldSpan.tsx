@@ -1,10 +1,10 @@
 import { StyleSheet, View, Text } from '@react-pdf/renderer';
 import type * as MessageParser from '@rocket.chat/message-parser';
 
+import EmojiSpan from './EmojiSpan';
 import ItalicSpan from './ItalicSpan';
 import LinkSpan from './LinkSpan';
 import StrikeSpan from './StrikeSpan';
-import EmojiSpan from './EmojiSpan';
 
 const styles = StyleSheet.create({
 	bold: {
@@ -17,7 +17,8 @@ type MessageBlock =
 	| MessageParser.ChannelMention
 	| MessageParser.UserMention
 	| MessageParser.Link
-	| MessageParser.MarkupExcluding<MessageParser.Bold>;
+	| MessageParser.MarkupExcluding<MessageParser.Bold>
+	| MessageParser.InlineCode;
 
 type BoldSpanProps = {
 	children: MessageBlock[];

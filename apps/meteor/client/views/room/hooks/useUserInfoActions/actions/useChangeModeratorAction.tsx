@@ -9,9 +9,9 @@ import React, { useCallback, useMemo } from 'react';
 import GenericModal from '../../../../../components/GenericModal';
 import { useEndpointAction } from '../../../../../hooks/useEndpointAction';
 import { roomCoordinator } from '../../../../../lib/rooms/roomCoordinator';
-import type { Action } from '../../../../hooks/useActionSpread';
 import { getRoomDirectives } from '../../../lib/getRoomDirectives';
 import { useUserHasRoomRole } from '../../useUserHasRoomRole';
+import type { UserInfoAction, UserInfoActionType } from '../useUserInfoActions';
 
 const getWarningModalForFederatedRooms = (
 	closeModalFn: () => void,
@@ -32,8 +32,7 @@ const getWarningModalForFederatedRooms = (
 	</GenericModal>
 );
 
-// TODO: Remove endpoint concatenation
-export const useChangeModeratorAction = (user: Pick<IUser, '_id' | 'username'>, rid: IRoom['_id']): Action | undefined => {
+export const useChangeModeratorAction = (user: Pick<IUser, '_id' | 'username'>, rid: IRoom['_id']): UserInfoAction | undefined => {
 	const t = useTranslation();
 	const room = useUserRoom(rid);
 	const { _id: uid } = user;
@@ -51,10 +50,10 @@ export const useChangeModeratorAction = (user: Pick<IUser, '_id' | 'username'>, 
 		throw Error('Room not provided');
 	}
 
-	const endpointPrefix = room.t === 'p' ? '/v1/groups' : '/v1/channels';
 	const { roomCanSetModerator } = getRoomDirectives({ room, showingUserId: uid, userSubscription });
 	const roomName = room?.t && escapeHTML(roomCoordinator.getRoomName(room.t, room));
 
+	const endpointPrefix = room.t === 'p' ? '/v1/groups' : '/v1/channels';
 	const changeModeratorEndpoint = isModerator ? 'removeModerator' : 'addModerator';
 	const changeModeratorMessage = isModerator
 		? 'User__username__removed_from__room_name__moderators'
@@ -122,9 +121,10 @@ export const useChangeModeratorAction = (user: Pick<IUser, '_id' | 'username'>, 
 		() =>
 			(isRoomFederated(room) && roomCanSetModerator) || (!isRoomFederated(room) && roomCanSetModerator && userCanSetModerator)
 				? {
-						label: t(isModerator ? 'Remove_as_moderator' : 'Set_as_moderator'),
+						content: t(isModerator ? 'Remove_as_moderator' : 'Set_as_moderator'),
 						icon: 'shield-blank' as const,
-						action: changeModeratorAction,
+						onClick: changeModeratorAction,
+						type: 'privileges' as UserInfoActionType,
 				  }
 				: undefined,
 		[changeModeratorAction, isModerator, roomCanSetModerator, t, userCanSetModerator, room],

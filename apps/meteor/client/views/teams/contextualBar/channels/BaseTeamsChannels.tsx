@@ -16,8 +16,8 @@ import {
 	ContextualbarFooter,
 	ContextualbarEmptyContent,
 } from '../../../../components/Contextualbar';
+import { VirtuosoScrollbars } from '../../../../components/CustomScrollbars';
 import InfiniteListAnchor from '../../../../components/InfiniteListAnchor';
-import ScrollableContentWrapper from '../../../../components/ScrollableContentWrapper';
 import Row from './Row';
 
 type BaseTeamsChannelsProps = {
@@ -84,10 +84,10 @@ const BaseTeamsChannels = ({
 				{onClickClose && <ContextualbarClose onClick={onClickClose} />}
 			</ContextualbarHeader>
 
-			<ContextualbarContent p='x12'>
-				<Box display='flex' flexDirection='row' p='x12' flexShrink={0}>
+			<ContextualbarContent p={12}>
+				<Box display='flex' flexDirection='row' p={12} flexShrink={0}>
 					<Box display='flex' flexDirection='row' flexGrow={1} mi='neg-x4'>
-						<Margins inline='x4'>
+						<Margins inline={4}>
 							<TextInput
 								placeholder={t('Search')}
 								value={text}
@@ -103,7 +103,7 @@ const BaseTeamsChannels = ({
 				</Box>
 
 				{loading && (
-					<Box pi='x24' pb='x12'>
+					<Box pi={24} pb={12}>
 						<Throbber size='x12' />
 					</Box>
 				)}
@@ -111,12 +111,12 @@ const BaseTeamsChannels = ({
 
 				{!loading && channels.length > 0 && (
 					<>
-						<Box pi='x18' pb='x12'>
+						<Box pi={18} pb={12}>
 							<Box is='span' color='hint' fontScale='p2'>
 								{t('Showing')}: {channels.length}
 							</Box>
 
-							<Box is='span' color='hint' fontScale='p2' mis='x8'>
+							<Box is='span' color='hint' fontScale='p2' mis={8}>
 								{t('Total')}: {total}
 							</Box>
 						</Box>
@@ -125,7 +125,7 @@ const BaseTeamsChannels = ({
 								totalCount={total}
 								data={channels}
 								// eslint-disable-next-line react/no-multi-comp
-								components={{ Scroller: ScrollableContentWrapper, Footer: () => <InfiniteListAnchor loadMore={loadMoreChannels} /> }}
+								components={{ Scroller: VirtuosoScrollbars, Footer: () => <InfiniteListAnchor loadMore={loadMoreChannels} /> }}
 								itemContent={(index, data) => <Row onClickView={onClickView} room={data} reload={reload} key={index} />}
 							/>
 						</Box>
