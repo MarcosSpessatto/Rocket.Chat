@@ -5,8 +5,9 @@ import { Messages, Rooms } from '@rocket.chat/models';
 import { Meteor } from 'meteor/meteor';
 
 import { callbacks } from '../../../../lib/callbacks';
-import { broadcastMessageFromData } from '../../../../server/modules/watchers/lib/messages';
 import { settings } from '../../../settings/server';
+import { notifyOnRoomChangedById, notifyOnMessageChange } from '../lib/notifyListener';
+import { validateCustomMessageFields } from '../lib/validateCustomMessageFields';
 import { parseUrlsInMessage } from './parseUrlsInMessage';
 
 export const updateMessage = async function (
@@ -23,7 +24,7 @@ export const updateMessage = async function (
 	let messageData: IMessage = Object.assign({}, originalMessage, message);
 
 	// For the Rocket.Chat Apps :)
-	if (message && Apps && Apps.isLoaded()) {
+	if (message && Apps.self && Apps.isLoaded()) {
 		const prevent = await Apps.getBridges().getListenerBridge().messageEvent(AppEvents.IPreMessageUpdatedPrevent, messageData);
 		if (prevent) {
 			throw new Meteor.Error('error-app-prevented-updating', 'A Rocket.Chat App prevented the message updating.');
@@ -59,6 +60,14 @@ export const updateMessage = async function (
 
 	messageData = await Message.beforeSave({ message: messageData, room, user });
 
+	if (messageData.customFields) {
+		validateCustomMessageFields({
+			customFields: messageData.customFields,
+			messageCustomFieldsEnabled: settings.get<boolean>('Message_CustomFields_Enabled'),
+			messageCustomFields: settings.get<string>('Message_CustomFields'),
+		});
+	}
+
 	const { _id, ...editedMessage } = messageData;
 
 	if (!editedMessage.msg) {
@@ -76,7 +85,7 @@ export const updateMessage = async function (
 		},
 	);
 
-	if (Apps?.isLoaded()) {
+	if (Apps.self?.isLoaded()) {
 		// This returns a promise, but it won't mutate anything about the message
 		// so, we don't really care if it is successful or fails
 		void Apps.getBridges()?.getListenerBridge().messageEvent(AppEvents.IPostMessageUpdated, messageData);
@@ -84,12 +93,21 @@ export const updateMessage = async function (
 
 	setImmediate(async () => {
 		const msg = await Messages.findOneById(_id);
-		if (msg) {
-			await callbacks.run('afterSaveMessage', msg, room, user._id);
-			void broadcastMessageFromData({
-				id: msg._id,
-				data: msg,
-			});
+		if (!msg) {
+			return;
+		}
+
+		// although this is an "afterSave" kind callback, we know they can extend message's properties
+		// so we wait for it to run before broadcasting
+		const data = await callbacks.run('afterSaveMessage', msg, room, user._id);
+
+		void notifyOnMessageChange({
+			id: msg._id,
+			data: data as any, // TODO move "afterSaveMessage" type definition to specify a return value
+		});
+
+		if (room?.lastMessage?._id === msg._id) {
+			void notifyOnRoomChangedById(message.rid);
 		}
 	});
 };

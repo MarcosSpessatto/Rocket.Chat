@@ -101,7 +101,7 @@ const useSearchItems = (filterText: string): UseQueryResult<(ISubscription & IRo
 	const getSpotlight = useMethod('spotlight');
 
 	return useQuery(
-		['sidebar/search/spotlight', name, usernamesFromClient, type, localRooms.map(({ _id }) => _id)],
+		['sidebar/search/spotlight', name, usernamesFromClient, type, localRooms.map(({ _id, name }) => _id + name)],
 		async () => {
 			if (localRooms.length === LIMIT) {
 				return localRooms;
@@ -338,15 +338,17 @@ const SearchList = forwardRef(function SearchList({ onClose }: SearchListProps, 
 			role='search'
 		>
 			<Sidebar.TopBar.Section {...({ flexShrink: 0 } as any)} is='form'>
-				<TextInput
-					aria-owns={listId}
-					data-qa='sidebar-search-input'
-					ref={autofocus}
-					{...filter}
-					placeholder={placeholder}
-					role='searchbox'
-					addon={<Icon name='cross' size='x20' onClick={onClose} />}
-				/>
+				<Box mb='x12' w='full'>
+					<TextInput
+						aria-owns={listId}
+						data-qa='sidebar-search-input'
+						ref={autofocus}
+						{...filter}
+						placeholder={placeholder}
+						role='searchbox'
+						addon={<Icon name='cross' size='x20' onClick={onClose} />}
+					/>
+				</Box>
 			</Sidebar.TopBar.Section>
 			<Box
 				ref={boxRef}

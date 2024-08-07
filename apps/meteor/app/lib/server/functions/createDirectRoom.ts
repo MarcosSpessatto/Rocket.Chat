@@ -11,6 +11,7 @@ import { callbacks } from '../../../../lib/callbacks';
 import { isTruthy } from '../../../../lib/isTruthy';
 import { settings } from '../../../settings/server';
 import { getDefaultSubscriptionPref } from '../../../utils/lib/getDefaultSubscriptionPref';
+import { notifyOnRoomChangedById } from '../lib/notifyListener';
 
 const generateSubscription = (
 	fname: string,
@@ -103,7 +104,7 @@ export async function createDirectRoom(
 			_USERNAMES: usernames,
 		};
 
-		const prevent = await Apps?.triggerEvent(AppEvents.IPreRoomCreatePrevent, tmpRoom).catch((error) => {
+		const prevent = await Apps.self?.triggerEvent(AppEvents.IPreRoomCreatePrevent, tmpRoom).catch((error) => {
 			if (error.name === AppsEngineException.name) {
 				throw new Meteor.Error('error-app-prevented', error.message);
 			}
@@ -115,9 +116,9 @@ export async function createDirectRoom(
 			throw new Meteor.Error('error-app-prevented', 'A Rocket.Chat App prevented the room creation.');
 		}
 
-		const result = await Apps?.triggerEvent(
+		const result = await Apps.self?.triggerEvent(
 			AppEvents.IPreRoomCreateModify,
-			await Apps?.triggerEvent(AppEvents.IPreRoomCreateExtend, tmpRoom),
+			await Apps.self?.triggerEvent(AppEvents.IPreRoomCreateExtend, tmpRoom),
 		);
 
 		if (typeof result === 'object') {
@@ -129,6 +130,8 @@ export async function createDirectRoom(
 
 	// @ts-expect-error - TODO: room expects `u` to be passed, but it's not part of the original object in here
 	const rid = room?._id || (await Rooms.insertOne(roomInfo)).insertedId;
+
+	void notifyOnRoomChangedById(rid, isNewRoom ? 'inserted' : 'updated');
 
 	if (roomMembers.length === 1) {
 		// dm to yourself
@@ -172,7 +175,7 @@ export async function createDirectRoom(
 
 		await callbacks.run('afterCreateDirectRoom', insertedRoom, { members: roomMembers, creatorId: options?.creator });
 
-		void Apps?.triggerEvent(AppEvents.IPostRoomCreate, insertedRoom);
+		void Apps.self?.triggerEvent(AppEvents.IPostRoomCreate, insertedRoom);
 	}
 
 	return {

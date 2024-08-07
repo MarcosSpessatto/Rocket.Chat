@@ -70,6 +70,19 @@ test.describe.serial('message-actions', () => {
 		await expect(poHomeChannel.content.lastMessageTextAttachmentEqualsText).toHaveText(message);
 	});
 
+	test('expect create a discussion from message', async ({ page }) => {
+		const message = `Message for discussion - ${Date.now()}`;
+
+		await poHomeChannel.content.sendMessage(message);
+		await poHomeChannel.content.openLastMessageMenu();
+		await page.locator('role=menuitem[name="Start a Discussion"]').click();
+		const createButton = page.getByRole('dialog').getByRole('button', { name: 'create' });
+		// Name should be prefilled thus making the create button enabled
+		await expect(createButton).not.toBeDisabled();
+		await createButton.click();
+		await expect(page.locator('header h1')).toHaveText(message);
+	});
+
 	test('expect star the message', async ({ page }) => {
 		await poHomeChannel.content.sendMessage('Message to star');
 		await poHomeChannel.content.openLastMessageMenu();
@@ -86,7 +99,7 @@ test.describe.serial('message-actions', () => {
 		await poHomeChannel.content.openLastMessageMenu();
 		await page.locator('role=menuitem[name="Copy text"]').click();
 
-		const clipboardText = await page.evaluate("navigator.clipboard.readText()");
+		const clipboardText = await page.evaluate('navigator.clipboard.readText()');
 		expect(clipboardText).toBe('Message to copy');
 	});
 
@@ -122,33 +135,92 @@ test.describe.serial('message-actions', () => {
 	});
 
 	test('expect forward message to channel', async () => {
-		const message = 'this is a message to forward to channel'
+		const message = 'this is a message to forward to channel';
 		await poHomeChannel.content.sendMessage(message);
-		await poHomeChannel.content.forwardMessage(forwardChannel)
+		await poHomeChannel.content.forwardMessage(forwardChannel);
 
 		await poHomeChannel.sidenav.openChat(forwardChannel);
-		await expect(poHomeChannel.content.lastUserMessage).toContainText(message)
-	})
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(message);
+	});
 
 	test('expect forward message to team', async () => {
-		const message = 'this is a message to forward to team'
+		const message = 'this is a message to forward to team';
 		await poHomeChannel.content.sendMessage(message);
-		await poHomeChannel.content.forwardMessage(forwardTeam)
+		await poHomeChannel.content.forwardMessage(forwardTeam);
 
 		await poHomeChannel.sidenav.openChat(forwardTeam);
-		await expect(poHomeChannel.content.lastUserMessage).toContainText(message)
-	})
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(message);
+	});
 
 	test('expect forward message to direct message', async () => {
-		const message = 'this is a message to forward to direct message'
-		const direct = 'RocketChat Internal Admin Test'
+		const message = 'this is a message to forward to direct message';
+		const direct = 'RocketChat Internal Admin Test';
 
 		// todo: Forward modal is using name as display and the sidebar is using username
 		await poHomeChannel.content.sendMessage(message);
-		await poHomeChannel.content.forwardMessage(direct)
+		await poHomeChannel.content.forwardMessage(direct);
 
 		await poHomeChannel.sidenav.openChat(ADMIN_CREDENTIALS.username);
-		await expect(poHomeChannel.content.lastUserMessage).toContainText(message)
-	})
-});
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(message);
+	});
 
+	test('expect forward text file to channel', async () => {
+		const filename = 'any_file.txt';
+		await poHomeChannel.content.sendFileMessage(filename);
+		await poHomeChannel.content.btnModalConfirm.click();
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+
+		await poHomeChannel.content.forwardMessage(forwardChannel);
+
+		await poHomeChannel.sidenav.openChat(forwardChannel);
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+	});
+
+	test('expect forward image file to channel', async () => {
+		const filename = 'test-image.jpeg';
+		await poHomeChannel.content.sendFileMessage(filename);
+		await poHomeChannel.content.btnModalConfirm.click();
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+
+		await poHomeChannel.content.forwardMessage(forwardChannel);
+
+		await poHomeChannel.sidenav.openChat(forwardChannel);
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+	});
+
+	test('expect forward pdf file to channel', async () => {
+		const filename = 'test_pdf_file.pdf';
+		await poHomeChannel.content.sendFileMessage(filename);
+		await poHomeChannel.content.btnModalConfirm.click();
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+
+		await poHomeChannel.content.forwardMessage(forwardChannel);
+
+		await poHomeChannel.sidenav.openChat(forwardChannel);
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+	});
+
+	test('expect forward audio message to channel', async () => {
+		const filename = 'sample-audio.mp3';
+		await poHomeChannel.content.sendFileMessage(filename);
+		await poHomeChannel.content.btnModalConfirm.click();
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+
+		await poHomeChannel.content.forwardMessage(forwardChannel);
+
+		await poHomeChannel.sidenav.openChat(forwardChannel);
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+	});
+
+	test('expect forward video message to channel', async () => {
+		const filename = 'test_video.mp4';
+		await poHomeChannel.content.sendFileMessage(filename);
+		await poHomeChannel.content.btnModalConfirm.click();
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+
+		await poHomeChannel.content.forwardMessage(forwardChannel);
+
+		await poHomeChannel.sidenav.openChat(forwardChannel);
+		await expect(poHomeChannel.content.lastUserMessage).toContainText(filename);
+	});
+});
