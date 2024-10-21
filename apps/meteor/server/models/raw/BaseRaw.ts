@@ -1,3 +1,4 @@
+import { traceInstanceMethods } from '@rocket.chat/core-services';
 import type { RocketChatRecordDeleted } from '@rocket.chat/core-typings';
 import type { IBaseModel, DefaultFields, ResultFields, FindPaginated, InsertionModel } from '@rocket.chat/model-typings';
 import type { Updater } from '@rocket.chat/models';
@@ -26,6 +27,7 @@ import type {
 	InsertOneResult,
 	DeleteResult,
 	DeleteOptions,
+	FindOneAndDeleteOptions,
 } from 'mongodb';
 
 import { setUpdatedAt } from './setUpdatedAt';
@@ -72,11 +74,11 @@ export abstract class BaseRaw<
 
 		this.col = this.db.collection(this.collectionName, options?.collection || {});
 
-		void this.createIndexes().catch((e) => {
-			console.warn(`Some indexes for collection '${this.collectionName}' could not be created:\n\t${e.message}`);
-		});
+		void this.createIndexes();
 
 		this.preventSetUpdatedAt = options?.preventSetUpdatedAt ?? false;
+
+		return traceInstanceMethods(this);
 	}
 
 	private pendingIndexes: Promise<void> | undefined;
@@ -92,7 +94,9 @@ export abstract class BaseRaw<
 				await this.pendingIndexes;
 			}
 
-			this.pendingIndexes = this.col.createIndexes(indexes) as unknown as Promise<void>;
+			this.pendingIndexes = this.col.createIndexes(indexes).catch((e) => {
+				console.warn(`Some indexes for collection '${this.collectionName}' could not be created:\n\t${e.message}`);
+			}) as unknown as Promise<void>;
 
 			void this.pendingIndexes.finally(() => {
 				this.pendingIndexes = undefined;
@@ -110,8 +114,16 @@ export abstract class BaseRaw<
 		return this.collectionName;
 	}
 
-	protected getUpdater(): Updater<T> {
-		return new UpdaterImpl<T>(this.col as unknown as IBaseModel<T>);
+	public getUpdater(): Updater<T> {
+		return new UpdaterImpl<T>();
+	}
+
+	public updateFromUpdater(query: Filter<T>, updater: Updater<T>): Promise<UpdateResult> {
+		const updateFilter = updater.getUpdateFilter();
+		return this.updateOne(query, updateFilter).catch((e) => {
+			console.warn(e, updateFilter);
+			return Promise.reject(e);
+		});
 	}
 
 	private doNotMixInclusionAndExclusionFields(options: FindOptions<T> = {}): FindOptions<T> {
@@ -307,7 +319,38 @@ export abstract class BaseRaw<
 		return this.col.deleteOne(filter);
 	}
 
-	async deleteMany(filter: Filter<T>, options?: DeleteOptions): Promise<DeleteResult> {
+	async findOneAndDelete(filter: Filter<T>, options?: FindOneAndDeleteOptions): Promise<ModifyResult<T>> {
+		if (!this.trash) {
+			return this.col.findOneAndDelete(filter, options || {});
+		}
+
+		const doc = await this.col.findOne(filter);
+		if (!doc) {
+			return { ok: 1, value: null };
+		}
+
+		const { _id, ...record } = doc;
+		const trash: TDeleted = {
+			...record,
+			_deletedAt: new Date(),
+			__collection__: this.name,
+		} as unknown as TDeleted;
+
+		await this.trash?.updateOne({ _id } as Filter<TDeleted>, { $set: trash } as UpdateFilter<TDeleted>, {
+			upsert: true,
+		});
+
+		try {
+			await this.col.deleteOne({ _id } as Filter<T>);
+		} catch (e) {
+			await this.trash?.deleteOne({ _id } as Filter<TDeleted>);
+			throw e;
+		}
+
+		return { ok: 1, value: doc };
+	}
+
+	async deleteMany(filter: Filter<T>, options?: DeleteOptions & { onTrash?: (record: ResultFields<T, C>) => void }): Promise<DeleteResult> {
 		if (!this.trash) {
 			if (options) {
 				return this.col.deleteMany(filter, options);
@@ -315,7 +358,7 @@ export abstract class BaseRaw<
 			return this.col.deleteMany(filter);
 		}
 
-		const cursor = this.find(filter);
+		const cursor = this.find<ResultFields<T, C>>(filter, { session: options?.session });
 
 		const ids: T['_id'][] = [];
 		for await (const doc of cursor) {
@@ -332,7 +375,10 @@ export abstract class BaseRaw<
 			// since the operation is not atomic, we need to make sure that the record is not already deleted/inserted
 			await this.trash?.updateOne({ _id } as Filter<TDeleted>, { $set: trash } as UpdateFilter<TDeleted>, {
 				upsert: true,
+				session: options?.session,
 			});
+
+			void options?.onTrash?.(doc);
 		}
 
 		if (options) {

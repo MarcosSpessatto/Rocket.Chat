@@ -21,7 +21,7 @@ export function createFakeUser(overrides?: Partial<IUser>): IUser {
 	};
 }
 
-export const createFakeRoom = (overrides?: Partial<IRoom>): IRoom => ({
+export const createFakeRoom = (overrides?: Partial<IRoom & { retention?: { enabled: boolean } }>): IRoom => ({
 	_id: faker.database.mongodbObjectId(),
 	_updatedAt: faker.date.recent(),
 	t: faker.helpers.arrayElement(['c', 'p', 'd']),
@@ -205,6 +205,7 @@ export const createFakeLicenseInfo = (partial: Partial<Omit<LicenseInfo, 'licens
 		'custom-roles',
 		'accessibility-certification',
 	]),
+	externalModules: [],
 	preventedActions: {
 		activeUsers: faker.datatype.boolean(),
 		guestUsers: faker.datatype.boolean(),

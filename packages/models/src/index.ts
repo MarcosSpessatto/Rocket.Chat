@@ -20,6 +20,7 @@ import type {
 	IImportDataModel,
 	ILivechatAgentActivityModel,
 	ILivechatBusinessHoursModel,
+	ILivechatContactsModel,
 	ILivechatCustomFieldModel,
 	ILivechatDepartmentAgentsModel,
 	ILivechatDepartmentModel,
@@ -78,6 +79,7 @@ import type {
 	ICronHistoryModel,
 	IMigrationsModel,
 	IModerationReportsModel,
+	IWorkspaceCredentialsModel,
 } from '@rocket.chat/model-typings';
 
 import { proxify } from './proxify';
@@ -117,6 +119,7 @@ export const Integrations = proxify<IIntegrationsModel>('IIntegrationsModel');
 export const Invites = proxify<IInvitesModel>('IInvitesModel');
 export const LivechatAgentActivity = proxify<ILivechatAgentActivityModel>('ILivechatAgentActivityModel');
 export const LivechatBusinessHours = proxify<ILivechatBusinessHoursModel>('ILivechatBusinessHoursModel');
+export const LivechatContacts = proxify<ILivechatContactsModel>('ILivechatContactsModel');
 export const LivechatCustomField = proxify<ILivechatCustomFieldModel>('ILivechatCustomFieldModel');
 export const LivechatDepartmentAgents = proxify<ILivechatDepartmentAgentsModel>('ILivechatDepartmentAgentsModel');
 export const LivechatDepartment = proxify<ILivechatDepartmentModel>('ILivechatDepartmentModel');
@@ -171,3 +174,4 @@ export const AuditLog = proxify<IAuditLogModel>('IAuditLogModel');
 export const CronHistory = proxify<ICronHistoryModel>('ICronHistoryModel');
 export const Migrations = proxify<IMigrationsModel>('IMigrationsModel');
 export const ModerationReports = proxify<IModerationReportsModel>('IModerationReportsModel');
+export const WorkspaceCredentials = proxify<IWorkspaceCredentialsModel>('IWorkspaceCredentialsModel');
