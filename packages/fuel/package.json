@@ -57,7 +57,7 @@
 		"cors": "^2.8.5",
 		"dotenv": "^16.4.5",
 		"express": "^4.21.1",
-		"inversify": "^6.1.1",
+		"inversify": "6.0.2",
 		"joi": "^17.13.3",
 		"lodash": "^4.17.21",
 		"map-keys-deep-lodash": "^1.2.4",
