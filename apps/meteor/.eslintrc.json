@@ -132,6 +132,13 @@
 			"rules": {
 				"@typescript-eslint/naming-convention": "off"
 			}
+		},
+		{
+			"files": ["**/proposal/**/*.ts"],
+			"extends": ["@rocket.chat/eslint-config/server"],
+			"env": {
+				"node": true
+			}
 		}
 	]
 }
