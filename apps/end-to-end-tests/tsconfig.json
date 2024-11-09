@@ -1,0 +1,29 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"target": "es2020",
+		"module": "commonjs",
+        "lib": ["es6"],
+
+		/* Module Resolution Options */
+		"baseUrl": ".",
+		"preserveSymlinks": true,
+		"strictPropertyInitialization": false,
+
+		// "sourceMap": true,
+		// "declaration": true,
+		// "removeComments": false,
+        "moduleResolution": "node",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"types": ["reflect-metadata", "jest", "node", "@rocket.chat/fuel/dist"]
+	},
+	"include": [
+		"./jest.config.ts",
+		"tests/**/*.ts"
+	],
+	"exclude": [
+		"**/node_modules/**",
+		"**/dist/**",
+	]
+}

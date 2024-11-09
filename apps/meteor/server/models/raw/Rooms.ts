@@ -246,7 +246,7 @@ export class RoomsRaw extends BaseRaw<IRoom> implements IRoomsModel {
 		const query: Filter<IRoom> = {
 			teamId,
 			teamMain: {
-				$exists: false,
+				$ne: true,
 			},
 			...(name ? { name: new RegExp(escapeRegExp(name), 'i') } : {}),
 			...(teamDefault === true ? { teamDefault } : {}),

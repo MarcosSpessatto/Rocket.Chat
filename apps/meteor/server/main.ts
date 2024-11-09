@@ -1,5 +1,7 @@
+import 'reflect-metadata';
 import './tracing';
 import './models/startup';
+import './external-module-integration';
 /**
  * ./settings uses top level await, in theory the settings creation
  * and the startup should be done in parallel
@@ -12,9 +14,9 @@ import { registerEEBroker } from '../ee/server';
 import { startFederationService } from '../ee/server/startup/services';
 import { configureLoginServices } from './configuration';
 import { configureLogLevel } from './configureLogLevel';
+import { runApplication } from './proposal';
 import { registerServices } from './services/startup';
 import { startup } from './startup';
-
 import './routes';
 import '../app/lib/server/startup';
 import './importPackages';
@@ -30,3 +32,4 @@ await Promise.all([configureLogLevel(), registerServices(), registerEEBroker(), 
 await startLicense();
 
 await Promise.all([configureLoginServices(), startFederationService()]);
+await runApplication();

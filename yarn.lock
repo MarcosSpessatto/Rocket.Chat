@@ -4473,32 +4473,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@inversifyjs/common@npm:1.3.2":
-  version: 1.3.2
-  resolution: "@inversifyjs/common@npm:1.3.2"
-  checksum: 10/6529be7a8327213dd1fe5fd4342625993e7bdc8b7686997879c4d1187e79beffbac6b04033ad16a3ef6062ad04f92c42d77a23f8236904d6b77102c9d0debe4c
-  languageName: node
-  linkType: hard
-
-"@inversifyjs/core@npm:1.3.2":
-  version: 1.3.2
-  resolution: "@inversifyjs/core@npm:1.3.2"
-  dependencies:
-    "@inversifyjs/common": "npm:1.3.2"
-    "@inversifyjs/reflect-metadata-utils": "npm:0.2.2"
-  checksum: 10/289b7583bd3f672fd3575d710e867cf85b6092e6cc854fb0e9cc65da6b28e35c228c479c52251f63d143ce027cc127826126b7b5fdb98e99d03352c2c055037a
-  languageName: node
-  linkType: hard
-
-"@inversifyjs/reflect-metadata-utils@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@inversifyjs/reflect-metadata-utils@npm:0.2.2"
-  peerDependencies:
-    reflect-metadata: 0.2.2
-  checksum: 10/77dac1780c848cf2a40c7d9163ad69b950ecd2e497f0a19f8a00effc58383f7b6f817a46d43aa0c7f6af59a572cd65016348ee832eab8866332dd24993070fc3
-  languageName: node
-  linkType: hard
-
 "@isaacs/cliui@npm:^8.0.2":
   version: 8.0.2
   resolution: "@isaacs/cliui@npm:8.0.2"
@@ -8876,6 +8850,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@rocket.chat/end-to-end-tests@workspace:apps/end-to-end-tests":
+  version: 0.0.0-use.local
+  resolution: "@rocket.chat/end-to-end-tests@workspace:apps/end-to-end-tests"
+  dependencies:
+    "@rocket.chat/eslint-config": "workspace:^"
+    "@rocket.chat/fuel": "workspace:^"
+    "@swc/jest": "npm:^0.2.36"
+    "@types/supertest": "npm:^6.0.2"
+    eslint: "npm:~8.45.0"
+    jest: "npm:^29.7.0"
+    reflect-metadata: "npm:^0.2.2"
+    supertest: "npm:^7.0.0"
+    ts-jest: "npm:^29.2.5"
+    typescript: "npm:5.6.3"
+  languageName: unknown
+  linkType: soft
+
 "@rocket.chat/eslint-config@workspace:^, @rocket.chat/eslint-config@workspace:packages/eslint-config, @rocket.chat/eslint-config@workspace:~":
   version: 0.0.0-use.local
   resolution: "@rocket.chat/eslint-config@workspace:packages/eslint-config"
@@ -8922,7 +8913,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@rocket.chat/fuel@workspace:packages/fuel":
+"@rocket.chat/fuel@workspace:^, @rocket.chat/fuel@workspace:packages/fuel":
   version: 0.0.0-use.local
   resolution: "@rocket.chat/fuel@workspace:packages/fuel"
   dependencies:
@@ -8960,7 +8951,7 @@ __metadata:
     dotenv: "npm:^16.4.5"
     eslint: "npm:~8.45.0"
     express: "npm:^4.21.1"
-    inversify: "npm:^6.1.1"
+    inversify: "npm:6.0.2"
     jest: "npm:29.7.0"
     joi: "npm:^17.13.3"
     lodash: "npm:^4.17.21"
@@ -9496,6 +9487,7 @@ __metadata:
     "@rocket.chat/eslint-config": "workspace:^"
     "@rocket.chat/favicon": "workspace:^"
     "@rocket.chat/freeswitch": "workspace:^"
+    "@rocket.chat/fuel": "workspace:^"
     "@rocket.chat/fuselage": "npm:^0.59.4"
     "@rocket.chat/fuselage-hooks": "npm:^0.33.1"
     "@rocket.chat/fuselage-polyfills": "npm:~0.31.25"
@@ -9797,6 +9789,7 @@ __metadata:
     react-i18next: "npm:~13.2.2"
     react-keyed-flatten-children: "npm:^1.3.0"
     react-virtuoso: "npm:^4.12.0"
+    reflect-metadata: "npm:^0.2.2"
     sanitize-html: "npm:^2.13.1"
     semver: "npm:^7.6.3"
     sharp: "npm:^0.33.5"
@@ -9985,6 +9978,24 @@ __metadata:
     polka: "npm:^0.5.2"
     ts-node: "npm:^10.9.2"
     typescript: "npm:~5.6.3"
+  languageName: unknown
+  linkType: soft
+
+"@rocket.chat/omnichannel@workspace:apps/omnichannel":
+  version: 0.0.0-use.local
+  resolution: "@rocket.chat/omnichannel@workspace:apps/omnichannel"
+  dependencies:
+    "@rocket.chat/eslint-config": "workspace:^"
+    "@rocket.chat/fuel": "workspace:^"
+    "@rocket.chat/random": "workspace:^"
+    "@swc/jest": "npm:^0.2.36"
+    eslint: "npm:~8.45.0"
+    jest: "npm:^29.7.0"
+    nodemon: "npm:^3.1.7"
+    reflect-metadata: "npm:^0.2.2"
+    ts-jest: "npm:^29.2.5"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:5.6.3"
   languageName: unknown
   linkType: soft
 
@@ -11950,7 +11961,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/jest@npm:~0.2.37":
+"@swc/jest@npm:^0.2.36, @swc/jest@npm:~0.2.37":
   version: 0.2.37
   resolution: "@swc/jest@npm:0.2.37"
   dependencies:
@@ -17651,7 +17662,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:^3.6.0":
+"chokidar@npm:^3.5.2, chokidar@npm:^3.6.0":
   version: 3.6.0
   resolution: "chokidar@npm:3.6.0"
   dependencies:
@@ -19472,7 +19483,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:4, debug@npm:^4.0.0, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.3.5, debug@npm:^4.3.7":
+"debug@npm:4, debug@npm:^4, debug@npm:^4.0.0, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.3.5, debug@npm:^4.3.7":
   version: 4.3.7
   resolution: "debug@npm:4.3.7"
   dependencies:
@@ -24440,6 +24451,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ignore-by-default@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "ignore-by-default@npm:1.0.1"
+  checksum: 10/441509147b3615e0365e407a3c18e189f78c07af08564176c680be1fabc94b6c789cad1342ad887175d4ecd5225de86f73d376cec8e06b42fd9b429505ffcf8a
+  languageName: node
+  linkType: hard
+
 "ignore@npm:^5.1.1, ignore@npm:^5.1.9, ignore@npm:^5.2.0":
   version: 5.2.0
   resolution: "ignore@npm:5.2.0"
@@ -24848,13 +24866,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"inversify@npm:^6.1.1":
-  version: 6.1.1
-  resolution: "inversify@npm:6.1.1"
-  dependencies:
-    "@inversifyjs/common": "npm:1.3.2"
-    "@inversifyjs/core": "npm:1.3.2"
-  checksum: 10/80587eab71fa590589e568090be47491da95c70929ceed3efc45ced25e3b4c5b9c0e6e3c735d37f4b8690b675bfdadbded5a65dc865e1d5f22df73b2264b721a
+"inversify@npm:6.0.2":
+  version: 6.0.2
+  resolution: "inversify@npm:6.0.2"
+  checksum: 10/0e4d07fb2dac82d21f55c711cdf35f9f75656c3f4651b8dd27f5aa3dcb154ad492ebdd0a66fbe394ac090aac0728da999d2a1c7ed62b5d8c772cad06e1684483
   languageName: node
   linkType: hard
 
@@ -29621,6 +29636,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"nodemon@npm:^3.1.7":
+  version: 3.1.7
+  resolution: "nodemon@npm:3.1.7"
+  dependencies:
+    chokidar: "npm:^3.5.2"
+    debug: "npm:^4"
+    ignore-by-default: "npm:^1.0.1"
+    minimatch: "npm:^3.1.2"
+    pstree.remy: "npm:^1.1.8"
+    semver: "npm:^7.5.3"
+    simple-update-notifier: "npm:^2.0.0"
+    supports-color: "npm:^5.5.0"
+    touch: "npm:^3.1.0"
+    undefsafe: "npm:^2.0.5"
+  bin:
+    nodemon: bin/nodemon.js
+  checksum: 10/07c6b14e4915bfe11abd0ee95bdfd96087dcdb7a37f9d1a57d9526f5f564268432556aa726a4019abf7e48deeff4628a5b34e88ccba8bf46c310c5910ad4a075
+  languageName: node
+  linkType: hard
+
 "nopt@npm:^5.0.0":
   version: 5.0.0
   resolution: "nopt@npm:5.0.0"
@@ -32445,6 +32480,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pstree.remy@npm:^1.1.8":
+  version: 1.1.8
+  resolution: "pstree.remy@npm:1.1.8"
+  checksum: 10/ef13b1b5896b35f67dbd4fb7ba54bb2a5da1a5c317276cbad4bcad4159bf8f7b5e1748dc244bf36865f3d560d2fc952521581280a91468c9c2df166cc760c8c1
+  languageName: node
+  linkType: hard
+
 "public-encrypt@npm:^4.0.0, public-encrypt@npm:^4.0.3":
   version: 4.0.3
   resolution: "public-encrypt@npm:4.0.3"
@@ -34977,6 +35019,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"simple-update-notifier@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "simple-update-notifier@npm:2.0.0"
+  dependencies:
+    semver: "npm:^7.5.3"
+  checksum: 10/40bd4f96aa89aedbf717ae9f4ab8fca70e8f7511e8b766feb15471cca3f6fe4fe673743309b08b4ba8abfe0965c9cd927e1de46550a757b819b70fc7430cc85d
+  languageName: node
+  linkType: hard
+
 "sinon@npm:^19.0.2":
   version: 19.0.2
   resolution: "sinon@npm:19.0.2"
@@ -36290,7 +36341,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"supports-color@npm:^5.3.0, supports-color@npm:^5.4.0":
+"supports-color@npm:^5.3.0, supports-color@npm:^5.4.0, supports-color@npm:^5.5.0":
   version: 5.5.0
   resolution: "supports-color@npm:5.5.0"
   dependencies:
@@ -37083,6 +37134,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"touch@npm:^3.1.0":
+  version: 3.1.1
+  resolution: "touch@npm:3.1.1"
+  bin:
+    nodetouch: bin/nodetouch.js
+  checksum: 10/853e763a1f4903302c5654ed353f84ad85baf757dac62c2d37ab67e0477cfd271e8c64771fcfad42310aff7c9d284ddb435ee5ca13ff36d0f3693fedd8e971d1
+  languageName: node
+  linkType: hard
+
 "tough-cookie@npm:^2.3.3, tough-cookie@npm:~2.5.0":
   version: 2.5.0
   resolution: "tough-cookie@npm:2.5.0"
@@ -37772,6 +37832,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"typescript@npm:5.6.3, typescript@npm:~5.6.3":
+  version: 5.6.3
+  resolution: "typescript@npm:5.6.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10/c328e418e124b500908781d9f7b9b93cf08b66bf5936d94332b463822eea2f4e62973bfb3b8a745fdc038785cb66cf59d1092bac3ec2ac6a3e5854687f7833f1
+  languageName: node
+  linkType: hard
+
 "typescript@npm:^3.8.3":
   version: 3.9.10
   resolution: "typescript@npm:3.9.10"
@@ -37782,13 +37852,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:~5.6.3":
+"typescript@patch:typescript@npm%3A5.6.3#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A~5.6.3#optional!builtin<compat/typescript>":
   version: 5.6.3
-  resolution: "typescript@npm:5.6.3"
+  resolution: "typescript@patch:typescript@npm%3A5.6.3#optional!builtin<compat/typescript>::version=5.6.3&hash=8c6c40"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/c328e418e124b500908781d9f7b9b93cf08b66bf5936d94332b463822eea2f4e62973bfb3b8a745fdc038785cb66cf59d1092bac3ec2ac6a3e5854687f7833f1
+  checksum: 10/00504c01ee42d470c23495426af07512e25e6546bce7e24572e72a9ca2e6b2e9bea63de4286c3cfea644874da1467dcfca23f4f98f7caf20f8b03c0213bb6837
   languageName: node
   linkType: hard
 
@@ -37799,16 +37869,6 @@ __metadata:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: 10/77024c200e1f80d95185d5a973bcc4b0ecc12a77851390b1382e372195313769373a4b8b1642df4a8d4ae1df5911dcd9bde111cf6755eb4b6091f374e97c6dc5
-  languageName: node
-  linkType: hard
-
-"typescript@patch:typescript@npm%3A~5.6.3#optional!builtin<compat/typescript>":
-  version: 5.6.3
-  resolution: "typescript@patch:typescript@npm%3A5.6.3#optional!builtin<compat/typescript>::version=5.6.3&hash=8c6c40"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10/00504c01ee42d470c23495426af07512e25e6546bce7e24572e72a9ca2e6b2e9bea63de4286c3cfea644874da1467dcfca23f4f98f7caf20f8b03c0213bb6837
   languageName: node
   linkType: hard
 
@@ -37910,6 +37970,13 @@ __metadata:
   bin:
     undeclared-identifiers: bin.js
   checksum: 10/e1f2a18d7bf735ec2b9ee464a621d8db72768e75e59334d34d1f7085e21558c621cc105dfd4cc7a0a219b91c43b71fbdea0508cdbe3b3396ed96902c6d5d590e
+  languageName: node
+  linkType: hard
+
+"undefsafe@npm:^2.0.5":
+  version: 2.0.5
+  resolution: "undefsafe@npm:2.0.5"
+  checksum: 10/f42ab3b5770fedd4ada175fc1b2eb775b78f609156f7c389106aafd231bfc210813ee49f54483d7191d7b76e483bc7f537b5d92d19ded27156baf57592eb02cc
   languageName: node
   linkType: hard
 

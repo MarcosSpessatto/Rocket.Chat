@@ -1,15 +1,17 @@
 /* eslint-disable complexity */
 import { AppEvents, Apps } from '@rocket.chat/apps';
 import { AppsEngineException } from '@rocket.chat/apps-engine/definition/exceptions';
-import { Federation, FederationEE, License, Message, Team } from '@rocket.chat/core-services';
+import { Message, Team } from '@rocket.chat/core-services';
 import type { ICreateRoomParams, ISubscriptionExtraData } from '@rocket.chat/core-services';
 import type { ICreatedRoom, IUser, IRoom, RoomType } from '@rocket.chat/core-typings';
-import { Rooms, Subscriptions, Users } from '@rocket.chat/models';
+import { monolithIntegrationContainer } from '@rocket.chat/fuel';
+import { Subscriptions, Users } from '@rocket.chat/models';
 import { Meteor } from 'meteor/meteor';
 
 import { callbacks } from '../../../../lib/callbacks';
 import { beforeCreateRoomCallback } from '../../../../lib/callbacks/beforeCreateRoomCallback';
-import { getSubscriptionAutotranslateDefaultConfig } from '../../../../server/lib/getSubscriptionAutotranslateDefaultConfig';
+import type { MonolithTeamCollaborationModuleConsumer } from '../../../../server/external-module-integration/consumer/team-collaboration';
+import { settings } from '../../../settings/server';
 import { getDefaultSubscriptionPref } from '../../../utils/lib/getDefaultSubscriptionPref';
 import { getValidRoomName } from '../../../utils/server/lib/getValidRoomName';
 import { notifyOnRoomChanged, notifyOnSubscriptionChangedById } from '../lib/notifyListener';
@@ -56,14 +58,13 @@ async function createUsersSubscriptions({
 		return;
 	}
 
-	const subs = [];
-
 	const memberIds = [];
 
 	const membersCursor = Users.findUsersByUsernames<Pick<IUser, '_id' | 'username' | 'settings' | 'federated' | 'roles'>>(members, {
 		projection: { 'username': 1, 'settings.preferences': 1, 'federated': 1, 'roles': 1 },
 	});
 
+	/* MIGRATION TO THE NEW STRUCTURE */
 	for await (const member of membersCursor) {
 		try {
 			await callbacks.run('federation.beforeAddUserToARoom', { user: member, inviter: owner }, room);
@@ -73,40 +74,15 @@ async function createUsersSubscriptions({
 		}
 
 		memberIds.push(member._id);
-
-		const extra: Partial<ISubscriptionExtraData> = options?.subscriptionExtra || {};
-
-		extra.open = true;
-
-		if (room.prid) {
-			extra.prid = room.prid;
-		}
-
-		if (member.username === owner.username) {
-			extra.ls = now;
-			extra.roles = ['owner'];
-		}
-
-		const autoTranslateConfig = getSubscriptionAutotranslateDefaultConfig(member);
-
-		subs.push({
-			user: member,
-			extraData: {
-				...extra,
-				...autoTranslateConfig,
-			},
-		});
 	}
 
 	if (!['d', 'l'].includes(room.t)) {
 		await Users.addRoomByUserIds(memberIds, room._id);
 	}
+	const subscriptions = await Subscriptions.findByRoomId(room._id).toArray();
+	subscriptions.forEach((sub) => notifyOnSubscriptionChangedById(sub._id, 'inserted'));
 
-	const { insertedIds } = await Subscriptions.createWithRoomAndManyUsers(room, subs);
-
-	Object.values(insertedIds).forEach((subId) => notifyOnSubscriptionChangedById(subId, 'inserted'));
-
-	await Rooms.incUsersCountById(room._id, subs.length);
+	/* MIGRATION TO THE NEW STRUCTURE */
 }
 
 export const createRoom = async <T extends RoomType>(
@@ -133,13 +109,16 @@ export const createRoom = async <T extends RoomType>(
 		// members,
 		// readOnly,
 		extraData,
+
 		// options,
 	});
-
 	if (type === 'd') {
 		return createDirectRoom(members as IUser[], extraData, { ...options, creator: options?.creator || owner?.username });
 	}
 
+	/*
+	 This is already migrated to a new structure, kept it here not to break existing logic that was not migrated
+	 */
 	if (!onlyUsernames(members)) {
 		throw new Meteor.Error(
 			'error-invalid-members',
@@ -152,7 +131,6 @@ export const createRoom = async <T extends RoomType>(
 			function: 'RocketChat.createRoom',
 		});
 	}
-
 	if (!owner) {
 		throw new Meteor.Error('error-invalid-user', 'Invalid user', {
 			function: 'RocketChat.createRoom',
@@ -164,19 +142,21 @@ export const createRoom = async <T extends RoomType>(
 			function: 'RocketChat.createRoom',
 		});
 	}
-
 	if (!excludeSelf && owner.username && !members.includes(owner.username)) {
 		members.push(owner.username);
 	}
+	/* Until here, everything was migrated */
 
 	if (extraData.broadcast) {
-		readOnly = true;
+		readOnly = true; // This was also migrated
 		delete extraData.reactWhenReadOnly;
 	}
 
 	// this might not be the best way to check if the room is a discussion, we may need a specific field for that
 	const isDiscussion = 'prid' in extraData && extraData.prid !== '';
-
+	/*
+		 This is already migrated to a new structure, kept it here not to break existing logic that was not migrated
+		 */
 	const now = new Date();
 
 	const roomProps: Omit<IRoom, '_id' | '_updatedAt'> = {
@@ -194,7 +174,6 @@ export const createRoom = async <T extends RoomType>(
 		},
 		ts: now,
 		ro: readOnly === true,
-		sidepanel,
 	};
 
 	if (teamId) {
@@ -203,6 +182,7 @@ export const createRoom = async <T extends RoomType>(
 			roomProps.teamId = team._id;
 		}
 	}
+	/* Until here, everything was migrated */
 
 	const tmp = {
 		...roomProps,
@@ -223,27 +203,54 @@ export const createRoom = async <T extends RoomType>(
 
 	const eventResult = await Apps.self?.triggerEvent(
 		AppEvents.IPreRoomCreateModify,
-		await Apps.triggerEvent(AppEvents.IPreRoomCreateExtend, tmp),
+		await Apps.self?.triggerEvent(AppEvents.IPreRoomCreateExtend, tmp),
 	);
 
 	if (eventResult && typeof eventResult === 'object' && delete eventResult._USERNAMES) {
 		Object.assign(roomProps, eventResult);
 	}
 
-	const shouldBeHandledByFederation = roomProps.federated === true || owner.username.includes(':');
-
-	if (shouldBeHandledByFederation) {
-		const federation = (await License.hasValidLicense()) ? FederationEE : Federation;
-		await federation.beforeCreateRoom(roomProps);
-	}
-
 	if (type === 'c') {
 		await callbacks.run('beforeCreateChannel', owner, roomProps);
 	}
 
-	const room = await Rooms.createWithFullRoomData(roomProps);
+	/* MIGRATION TO THE NEW STRUCTURE */
+	const roomExtradata = { ...extraData, ...(sidepanel !== undefined ? { sidepanel } : {}) };
+	const subscriptionExtradata = options;
+	const roomId = await monolithIntegrationContainer
+		.resolveByToken<MonolithTeamCollaborationModuleConsumer>('MonolithTeamCollaborationModuleConsumer')
+		.createRoomAndMembership(
+			{
+				type,
+				name,
+				membersUsername: members,
+				isCreatingOnBehalfOf: excludeSelf,
+				ownerId: owner._id,
+				isReadonly: readOnly,
+				parentRoomId: extraData.prid,
+				teamId,
+				displayName: extraData.fname,
+				settings: {
+					shouldAllowSpecialCharactersOnName: settings.get<boolean>('UI_Allow_room_names_with_special_chars'),
+					systemBlockedIdentifiers: settings.get<string>('Accounts_SystemBlockedUsernameList').split(','),
+					usernameBlockedIdentifiers: settings.get<string>('Accounts_BlockedUsernameList').split(','),
+					validationPattern: settings.get<string>('UTF8_Channel_Names_Validation'),
+				},
+			},
+			roomExtradata,
+			subscriptionExtradata,
+		);
+
+	const room = {
+		_id: roomId,
+		_updatedAt: new Date(),
+		...roomProps,
+	};
+	/* MIGRATION TO THE NEW STRUCTURE */
 
 	void notifyOnRoomChanged(room, 'inserted');
+
+	const shouldBeHandledByFederation = room.federated === true || owner.username.includes(':');
 
 	await createUsersSubscriptions({ room, members, now, owner, options, shouldBeHandledByFederation });
 
